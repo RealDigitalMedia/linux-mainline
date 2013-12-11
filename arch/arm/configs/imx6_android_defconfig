@@ -1384,7 +1384,7 @@ CONFIG_HOSTAP=y
 # CONFIG_LIBERTAS is not set
 # CONFIG_HERMES is not set
 # CONFIG_MWIFIEX is not set
-CONFIG_RTL8192CE=m
+CONFIG_RTL8192CU=m
 
 #
 # Enable WiMAX (Networking options) to see the WiMAX drivers

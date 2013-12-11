@@ -1,0 +1,1 @@
+#define DRIVERVERSION	"v4.0.2_7464.20130515_beta"
