@@ -31,14 +31,14 @@
 
 #define PLATFORM_LINUX	1
 
-#define CONFIG_IOCTL_CFG80211 1
+#define CONFIG_IOCTL_CFG80211 1	// <- Defined by Makefile
 #ifdef CONFIG_PLATFORM_ARM_SUNxI
 	#ifndef CONFIG_IOCTL_CFG80211 
 		#define CONFIG_IOCTL_CFG80211 1
 	#endif
 #endif
 #ifdef CONFIG_IOCTL_CFG80211
-	#define RTW_USE_CFG80211_STA_EVENT /* Indecate new sta asoc through cfg80211_new_sta */
+	//#define RTW_USE_CFG80211_STA_EVENT /* Indecate new sta asoc through cfg80211_new_sta <- Defined by Makefile*/
 	//#define CONFIG_CFG80211_FORCE_COMPATIBLE_2_6_37_UNDER
 	//#define CONFIG_DEBUG_CFG80211 1
 	//#define CONFIG_DRV_ISSUE_PROV_REQ // IOT FOR S2
@@ -123,7 +123,7 @@
 	//#define CONFIG_DBG_P2P
 
 	//#define CONFIG_P2P_PS
-	#define CONFIG_P2P_IPS
+	//#define CONFIG_P2P_IPS -> Defined by Makefile
 #endif
 
 //	Added by Kurt 20110511

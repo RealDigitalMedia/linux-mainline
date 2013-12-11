@@ -1370,6 +1370,13 @@ config SMP
 
 	  If you don't know what to do here, say N.
 
+config DSA2L
+	bool "Shuttle dedicated project: DSA2L"
+	depends on ARCH_MX6Q
+	default y
+	help
+	  DSA2L is a project name of Shuttle Inc.
+
 config SMP_ON_UP
 	bool "Allow booting SMP kernel on uniprocessor systems (EXPERIMENTAL)"
 	depends on EXPERIMENTAL

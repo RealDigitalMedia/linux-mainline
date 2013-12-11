@@ -433,8 +433,8 @@ EXTRA_CFLAGS += -DCONFIG_CONCURRENT_MODE
 EXTRA_CFLAGS += -DCONFIG_IOCTL_CFG80211 -DRTW_USE_CFG80211_STA_EVENT
 EXTRA_CFLAGS += -DCONFIG_P2P_IPS
 ARCH := arm
-CROSS_COMPILE := /home/alanz/i.mx6_jb4.2_ga/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-
-KSRC := /home/alanz/i.mx6_jb4.2_ga/kernel_imx
+CROSS_COMPILE := $(shell pwd)/../../../../../prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-
+KSRC := $(shell pwd)/../../../../../kernel_imx
 endif
 
 ifeq ($(CONFIG_PLATFORM_TEGRA4_DALMORE), y)

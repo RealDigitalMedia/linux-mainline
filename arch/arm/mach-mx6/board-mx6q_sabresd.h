@@ -269,6 +269,7 @@ static iomux_v3_cfg_t mx6q_sabresd_pads[] = {
 	MX6Q_PAD_NANDF_CS3__GPIO_6_16,
 };
 
+#ifndef	CONFIG_DSA2L
 static iomux_v3_cfg_t mx6q_sabresd_csi0_sensor_pads[] = {
 	/* IPU1 Camera */
 	MX6Q_PAD_CSI0_DAT12__IPU1_CSI0_D_12,
@@ -296,6 +297,7 @@ static iomux_v3_cfg_t mx6q_sabresd_mipi_sensor_pads[] = {
 	MX6Q_PAD_SD1_DAT2__GPIO_1_19,		/* camera PWDN */
 	MX6Q_PAD_SD1_CLK__GPIO_1_20,		/* camera RESET */
 };
+#endif	// CONFIG_DSA2L
 
 static iomux_v3_cfg_t mx6q_sabresd_hdmi_ddc_pads[] = {
 	MX6Q_PAD_KEY_COL3__HDMI_TX_DDC_SCL, /* HDMI DDC SCL */

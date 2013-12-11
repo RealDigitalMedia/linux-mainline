@@ -210,18 +210,22 @@
 
 static struct clk *sata_clk;
 static struct clk *clko;
+#ifndef	CONFIG_DSA2L
 static int mma8451_position;
 static int mag3110_position = 1;
 static int max11801_mode = 1;
-static int caam_enabled;
 static int uart5_enabled;
+#endif	// CONFIG_DSA2L
+static int caam_enabled;
 
 extern char *gp_reg_id;
 extern char *soc_reg_id;
 extern char *pu_reg_id;
 extern int epdc_enabled;
 
+#ifndef CONFIG_DSA2L
 static int max17135_regulator_init(struct max17135 *max17135);
+#endif	// CONFIG_DSA2L
 
 static const struct esdhc_platform_data mx6q_sabresd_sd2_data __initconst = {
 	.cd_gpio = SABRESD_SD2_CD,
@@ -256,11 +260,13 @@ static const struct anatop_thermal_platform_data
 		.name = "anatop_thermal",
 };
 
+#ifndef CONFIG_DSA2L
 static const struct imxuart_platform_data mx6q_sd_uart5_data __initconst = {
 	.flags      = IMXUART_HAVE_RTSCTS,
 	.dma_req_rx = MX6Q_DMA_REQ_UART5_RX,
 	.dma_req_tx = MX6Q_DMA_REQ_UART5_TX,
 };
+#endif	// CONFIG_DSA2L
 
 static inline void mx6q_sabresd_init_uart(void)
 {
@@ -368,6 +374,7 @@ static struct imx_ssi_platform_data mx6_sabresd_ssi_pdata = {
 	.flags = IMX_SSI_DMA | IMX_SSI_SYN,
 };
 
+#ifndef	CONFIG_DSA2L
 static struct platform_device mx6_sabresd_audio_wm8958_device = {
 	.name = "imx-wm8958",
 };
@@ -419,6 +426,7 @@ static int mxc_wm8958_init(void)
 
 	return 0;
 }
+#endif	// CONFIG_DSA2L
 
 static struct platform_device mx6_sabresd_audio_wm8962_device = {
 	.name = "imx-wm8962",
@@ -505,6 +513,7 @@ static struct platform_device sabresd_vwm8962_reg_devices = {
 	},
 };
 
+#ifndef CONFIG_DSA2L
 static void mx6q_csi0_cam_powerdown(int powerdown)
 {
 	if (powerdown)
@@ -799,19 +808,23 @@ static int __init max17135_regulator_init(struct max17135 *max17135)
 
 	return 0;
 }
+#endif	// CONFIG_DSA2L
 
 static struct imxi2c_platform_data mx6q_sabresd_i2c_data = {
 	.bitrate = 100000,
 };
 
+#ifndef CONFIG_DSA2L
 static struct fsl_mxc_lightsensor_platform_data ls_data = {
 	.rext = 499,	/* calibration: 499K->700K */
 };
+#endif	// CONFIG_DSA2L
 
 static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
 	{
 		I2C_BOARD_INFO("wm89**", 0x1a),
 	},
+#ifndef CONFIG_DSA2L
 	{
 		I2C_BOARD_INFO("ov564x", 0x3c),
 		.platform_data = (void *)&camera_data,
@@ -820,12 +833,14 @@ static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
 		I2C_BOARD_INFO("mma8451", 0x1c),
 		.platform_data = (void *)&mma8451_position,
 	},
+#endif	// CONFIG_DSA2L
 };
 
 static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 	{
 		I2C_BOARD_INFO("mxc_hdmi_i2c", 0x50),
 	},
+#ifndef	CONFIG_DSA2L
 	{
 		I2C_BOARD_INFO("ov5640_mipi", 0x3c),
 		.platform_data = (void *)&mipi_csi2_data,
@@ -839,8 +854,10 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 		.platform_data = (void *)&max11801_mode,
 		.irq = gpio_to_irq(SABRESD_TS_INT),
 	},
+#endif
 };
 
+#ifndef CONFIG_DSA2L
 static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 	{
 		I2C_BOARD_INFO("max17135", 0x48),
@@ -1110,6 +1127,7 @@ static struct imx_epdc_fb_platform_data epdc_data = {
 	.enable_pins = epdc_enable_pins,
 	.disable_pins = epdc_disable_pins,
 };
+#endif	// CONFIG_DSA2L
 
 static void imx6q_sabresd_usbotg_vbus(bool on)
 {
@@ -1447,6 +1465,7 @@ static struct fsl_mxc_capture_platform_data capture_data[] = {
 	},
 };
 
+#ifndef	CONFIG_DSA2L
 static void mx6q_sd_bt_reset(void)
 {
 	printk(KERN_INFO "mx6q_sd_bt_reset");
@@ -1474,6 +1493,8 @@ static struct platform_device mxc_bt_rfkill = {
 static struct imx_bt_rfkill_platform_data mxc_bt_rfkill_data = {
 	.power_change = mx6q_sd_bt_power_change,
 };
+#endif	// CONFIG_DSA2L
+
 static void sabresd_suspend_enter(void)
 {
 	/* suspend preparation */
@@ -1521,6 +1542,7 @@ static struct platform_device sabresd_vmmc_reg_devices = {
 
 static int __init imx6q_init_audio(void)
 {
+#ifndef CONFIG_DSA2L
 	if (board_is_mx6_reva()) {
 		mxc_register_device(&mx6_sabresd_audio_wm8958_device,
 				    &wm8958_data);
@@ -1528,14 +1550,16 @@ static int __init imx6q_init_audio(void)
 
 		mxc_wm8958_init();
 	} else {
+#endif	// CONFIG_DSA2L
 		platform_device_register(&sabresd_vwm8962_reg_devices);
 		mxc_register_device(&mx6_sabresd_audio_wm8962_device,
 				    &wm8962_data);
 		imx6q_add_imx_ssi(1, &mx6_sabresd_ssi_pdata);
 
 		mxc_wm8962_init();
+#ifndef CONFIG_DSA2L
 	}
-
+#endif	// CONFIG_DSA2L
 	return 0;
 }
 
@@ -1600,7 +1624,9 @@ static struct platform_device imx6q_gpio_led_device = {
  */
 static void __init imx6q_add_device_gpio_leds(void)
 {
+#ifndef	CONFIG_DSA2L
 	if (!uart5_enabled)
+#endif	// CONFIG_DSA2L
 		platform_device_register(&imx6q_gpio_led_device);
 }
 #else
@@ -1762,6 +1788,7 @@ static void __init fixup_mxc_board(struct machine_desc *desc, struct tag *tags,
 	}
 }
 
+#ifndef	CONFIG_DSA2L
 static struct mipi_csi2_platform_data mipi_csi2_pdata = {
 	.ipu_id	 = 0,
 	.csi_id = 1,
@@ -1770,6 +1797,7 @@ static struct mipi_csi2_platform_data mipi_csi2_pdata = {
 	.dphy_clk = "mipi_pllref_clk",
 	.pixel_clk = "emi_clk",
 };
+#endif	// CONFIG_DSA2L
 
 static int __init caam_setup(char *__unused)
 {
@@ -1817,6 +1845,7 @@ static int __init imx6x_add_ram_console(void)
 #define imx6x_add_ram_console() do {} while (0)
 #endif
 
+#ifndef	CONFIG_DSA2L
 static iomux_v3_cfg_t mx6q_uart5_pads[] = {
 	MX6Q_PAD_KEY_ROW1__UART5_RXD,
 	MX6Q_PAD_KEY_COL1__UART5_TXD,
@@ -1852,6 +1881,7 @@ static void __init uart5_init(void)
 				ARRAY_SIZE(mx6dl_uart5_pads));
 	imx6q_add_imx_uart(4, &mx6q_sd_uart5_data);
 }
+#endif	// CONFIG_DSA2L
 
 /*!
  * Board specific initialization.
@@ -1886,11 +1916,13 @@ static void __init mx6_sabresd_board_init(void)
 	mx6q_sabresd_init_uart();
 	imx6x_add_ram_console();
 
+#ifndef	CONFIG_DSA2L
 	/*add bt support*/
 	if (uart5_enabled) {
 		uart5_init();
 		mxc_register_device(&mxc_bt_rfkill, &mxc_bt_rfkill_data);
 	}
+#endif	// CONFIG_DSA2L
 	/*
 	 * MX6DL/Solo only supports single IPU
 	 * The following codes are used to change ipu id
@@ -1925,28 +1957,39 @@ static void __init mx6_sabresd_board_init(void)
 	imx6q_add_v4l2_output(0);
 	imx6q_add_v4l2_capture(0, &capture_data[0]);
 	imx6q_add_v4l2_capture(1, &capture_data[1]);
+#ifndef	CONFIG_DSA2L
 	imx6q_add_mipi_csi2(&mipi_csi2_pdata);
+#endif	// CONFIG_DSA2L
 	imx6q_add_imx_snvs_rtc();
 
 	if (1 == caam_enabled)
 		imx6q_add_imx_caam();
-
+		
+#ifndef	CONFIG_DSA2L
 	if (board_is_mx6_reva()) {
 		strcpy(mxc_i2c0_board_info[0].type, "wm8958");
 		mxc_i2c0_board_info[0].platform_data = &wm8958_config_data;
 	} else {
+#endif	// CONFIG_DSA2L
 		strcpy(mxc_i2c0_board_info[0].type, "wm8962");
 		mxc_i2c0_board_info[0].platform_data = &wm8962_config_data;
+#ifndef	CONFIG_DSA2L
 	}
+#endif	// CONFIG_DSA2L
+
 	imx6q_add_device_gpio_leds();
 
 	imx6q_add_imx_i2c(0, &mx6q_sabresd_i2c_data);
 	imx6q_add_imx_i2c(1, &mx6q_sabresd_i2c_data);
 	imx6q_add_imx_i2c(2, &mx6q_sabresd_i2c_data);
+	
 	i2c_register_board_info(0, mxc_i2c0_board_info,
 			ARRAY_SIZE(mxc_i2c0_board_info));
 	i2c_register_board_info(1, mxc_i2c1_board_info,
 			ARRAY_SIZE(mxc_i2c1_board_info));
+#ifdef CONFIG_DSA2L
+	mx6q_dsa2l_init_wm8326();
+#else	// CONFIG_DSA2L
 	i2c_register_board_info(2, mxc_i2c2_board_info,
 			ARRAY_SIZE(mxc_i2c2_board_info));
 	ret = gpio_request(SABRESD_PFUZE_INT, "pFUZE-int");
@@ -1957,6 +2000,7 @@ static void __init mx6_sabresd_board_init(void)
 		gpio_direction_input(SABRESD_PFUZE_INT);
 		mx6q_sabresd_init_pfuze100(SABRESD_PFUZE_INT);
 	}
+#endif	// CONFIG_DSA2L
 	/* SPI */
 	imx6q_add_ecspi(0, &mx6q_sabresd_spi_data);
 	spi_device_init();
@@ -2013,7 +2057,7 @@ static void __init mx6_sabresd_board_init(void)
 	imx6q_add_mxc_pwm(2);
 	imx6q_add_mxc_pwm(3);
 	imx6q_add_mxc_pwm_backlight(0, &mx6_sabresd_pwm_backlight_data);
-
+	
 	imx6q_add_otp();
 	imx6q_add_viim();
 	imx6q_add_imx2_wdt(0, NULL);
@@ -2044,10 +2088,12 @@ static void __init mx6_sabresd_board_init(void)
 	if (cpu_is_mx6dl()) {
 		imx6dl_add_imx_pxp();
 		imx6dl_add_imx_pxp_client();
+#ifndef	CONFIG_DSA2L
 		if (epdc_enabled) {
 			mxc_register_device(&max17135_sensor_device, NULL);
 			imx6dl_add_imx_epdc(&epdc_data);
 		}
+#endif	// CONFIG_DSA2L
 	}
 	/*
 	ret = gpio_request_array(mx6q_sabresd_flexcan_gpios,
@@ -2090,7 +2136,9 @@ static void __init mx6_sabresd_board_init(void)
 	/* Add PCIe RC interface support
 	 * uart5 has pin mux with pcie. or you will use uart5 or use pcie
 	 */
+#ifndef	CONFIG_DSA2L
 	if (!uart5_enabled)
+#endif	// CONFIG_DSA2L
 		imx6q_add_pcie(&mx6_sabresd_pcie_data);
 	if (cpu_is_mx6dl()) {
 		mxc_iomux_v3_setup_multiple_pads(mx6dl_arm2_elan_pads,
@@ -2111,7 +2159,6 @@ static void __init mx6_sabresd_board_init(void)
 		gpio_direction_output(SABRESD_ELAN_RST, 1);
 		gpio_direction_output(SABRESD_ELAN_CE, 1);
 	}
-
 	imx6_add_armpmu();
 	imx6q_add_perfmon(0);
 	imx6q_add_perfmon(1);
