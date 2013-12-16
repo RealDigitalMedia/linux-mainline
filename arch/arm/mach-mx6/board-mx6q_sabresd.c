@@ -288,7 +288,7 @@ static const struct imxuart_platform_data mx6q_sd_uart5_data __initconst = {
 
 static inline void mx6q_sabresd_init_uart(void)
 {
-	imx6q_add_imx_uart(2, NULL);
+	imx6q_add_imx_uart(1, NULL);
 	imx6q_add_imx_uart(0, NULL);
 }
 
@@ -875,12 +875,13 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 #endif
 };
 
+
 #ifndef CONFIG_DSA2L
 static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
-	{
-		I2C_BOARD_INFO("max17135", 0x48),
-		.platform_data = &max17135_pdata,
-	},
+	//{
+	//	I2C_BOARD_INFO("max17135", 0x48),
+	//	.platform_data = &max17135_pdata,
+	//},
 	//{
 	//	I2C_BOARD_INFO("egalax_ts", 0x4),
 	//	.irq = gpio_to_irq(SABRESD_CAP_TCH_INT1),
@@ -1329,17 +1330,17 @@ static struct imx_asrc_platform_data imx_asrc_data = {
 
 static struct ipuv3_fb_platform_data sabresd_fb_data[] = {
 	{ /*fb0*/
-	.disp_dev = "ldb",
-	.interface_pix_fmt = IPU_PIX_FMT_RGB666,
-	.mode_str = "LDB-XGA",
-	.default_bpp = 16,
-	.int_clk = false,
-	.late_init = false,
-	}, {
 	.disp_dev = "hdmi",
 	.interface_pix_fmt = IPU_PIX_FMT_RGB24,
 	.mode_str = "1920x1080M@60",
 	.default_bpp = 32,
+	.int_clk = false,
+	.late_init = false,
+	}, {
+	.disp_dev = "ldb",
+	.interface_pix_fmt = IPU_PIX_FMT_RGB666,
+	.mode_str = "LDB-XGA",
+	.default_bpp = 16,
 	.int_clk = false,
 	.late_init = false,
 	}, {
@@ -1470,19 +1471,19 @@ static struct ion_platform_data imx_ion_data = {
 	},
 };
 
-static struct fsl_mxc_capture_platform_data capture_data[] = {
-	{
-		.csi = 0,
-		.ipu = 0,
-		.mclk_source = 0,
-		.is_mipi = 0,
-	}, {
-		.csi = 1,
-		.ipu = 0,
-		.mclk_source = 0,
-		.is_mipi = 1,
-	},
-};
+//static struct fsl_mxc_capture_platform_data capture_data[] = {
+//	{
+//		.csi = 0,
+//		.ipu = 0,
+//		.mclk_source = 0,
+//		.is_mipi = 0,
+//	}, {
+//		.csi = 1,
+//		.ipu = 0,
+//		.mclk_source = 0,
+//		.is_mipi = 1,
+//	},
+//};
 
 #ifndef	CONFIG_DSA2L
 static void mx6q_sd_bt_reset(void)
@@ -1991,8 +1992,8 @@ static void __init mx6_sabresd_board_init(void)
 	imx6q_add_lcdif(&lcdif_data);
 	imx6q_add_ldb(&ldb_data);
 	imx6q_add_v4l2_output(0);
-	imx6q_add_v4l2_capture(0, &capture_data[0]);
-	imx6q_add_v4l2_capture(1, &capture_data[1]);
+	//imx6q_add_v4l2_capture(0, &capture_data[0]);
+	//imx6q_add_v4l2_capture(1, &capture_data[1]);
 #ifndef	CONFIG_DSA2L
 	imx6q_add_mipi_csi2(&mipi_csi2_pdata);
 #endif	// CONFIG_DSA2L
@@ -2101,19 +2102,16 @@ static void __init mx6_sabresd_board_init(void)
 
 	imx6q_add_imx_i2c(0, &mx6q_sabresd_i2c_data);
 	imx6q_add_imx_i2c(1, &mx6q_sabresd_i2c_data);
-	imx6q_add_imx_i2c(2, &mx6q_sabresd_i2c_data);
-	imx6q_add_imx_i2c(3, &mx6q_sabresd_i2c_data);
+	//imx6q_add_imx_i2c(2, &mx6q_sabresd_i2c_data);
 	i2c_register_board_info(0, mxc_i2c0_board_info,
 			ARRAY_SIZE(mxc_i2c0_board_info));
 	i2c_register_board_info(1, mxc_i2c1_board_info,
 			ARRAY_SIZE(mxc_i2c1_board_info));
+	//i2c_register_board_info(2, mxc_i2c2_board_info,
+	//		ARRAY_SIZE(mxc_i2c2_board_info));
 #ifdef CONFIG_DSA2L
 	mx6q_dsa2l_init_wm8326();
 #else	// CONFIG_DSA2L
-	i2c_register_board_info(2, mxc_i2c2_board_info,
-			ARRAY_SIZE(mxc_i2c2_board_info));
-	i2c_register_board_info(3, mxc_i2c2_board_info,
-			ARRAY_SIZE(mxc_i2c2_board_info));
 	//ret = gpio_request(SABRESD_PFUZE_INT, "pFUZE-int");
 	//if (ret) {
 	//	printk(KERN_ERR"request pFUZE-int error!!\n");
