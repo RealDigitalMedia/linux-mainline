@@ -35,6 +35,10 @@
 
 extern u32 enable_ldo_mode;
 
+// -> [Walker Chen], 2013/12/18  - added pmic irq
+#define DSA2L_PMIC_INT IMX_GPIO_NR(7, 11)
+// <- End.
+
 #ifdef CONFIG_MX6_INTER_LDO_BYPASS
 /* 1.3, 1.3 1.5 */
 #define WM831X_DC1_ON_CONFIG_VAL            (0x40<<WM831X_DC1_ON_VSEL_SHIFT)
@@ -187,6 +191,9 @@ static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 	{
 	I2C_BOARD_INFO("wm8326", 0x34),
 	.platform_data = &dsa2l_wm8326_pdata,
+	// -> [Walker Chen], 2013/12/18  - added pmic irq 
+	.irq = gpio_to_irq( DSA2L_PMIC_INT ),
+	// <- End.
 	},
 	// Reserve for CH7036...
 	//{
