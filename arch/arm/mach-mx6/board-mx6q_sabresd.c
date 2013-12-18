@@ -1616,10 +1616,21 @@ static int __init imx6q_init_audio(void)
 static struct gpio_led imx6q_gpio_leds[] = {
 	//GPIO_LED(SABRESD_CHARGE_NOW, "chg_now_led", 0, 1,
 	//	"charger-charging"),
-	GPIO_LED(DSA2L_LED_R, "red_led", 0, 1,
-		"system_error_led"),
-	GPIO_LED(DSA2L_LED_B, "blue_led", 0, 1,
-		"system_led"),
+	{
+		.gpio			= DSA2L_LED_R,
+		.name			= "red_led",
+		.active_low		= 0,
+		.retain_state_suspended = 1,
+		.default_state		= 0,
+	},
+	{
+		.gpio			= DSA2L_LED_B,
+		.name			= "blue_led",
+		.active_low		= 0,
+		.retain_state_suspended = 1,
+		.default_state		= 1,
+		.default_trigger	= "heartbeat",	
+	},
 
 /* For the latest B4 board, this GPIO_1 is connected to POR_B,
 which will reset the whole board if this pin's level is changed,
@@ -1843,6 +1854,9 @@ static void mx6_snvs_poweroff(void)
 	/*set TOP and DP_EN bit*/
 	writel(value | 0x60, mx6_snvs_base + SNVS_LPCR);
 	
+}
+static void arch_poweroff(void)
+{
 	// -> [Walker Chen], 2013/12/11 - added system poweroff
 	gpio_request( DSA2L_PMIC_GPIO_RST , "GPIO_RST" );
 	gpio_direction_output( DSA2L_PMIC_GPIO_RST , 1 );
@@ -1850,8 +1864,7 @@ static void mx6_snvs_poweroff(void)
 	msleep(100);//100ms
 	gpio_set_value( DSA2L_PMIC_GPIO_RST , 1 );
 	gpio_free( DSA2L_PMIC_INT );
-	// <- End.
-	
+	// <- End.	
 }
 
 //static const struct imx_pcie_platform_data mx6_sabresd_pcie_data __initconst = {
@@ -1997,7 +2010,7 @@ static void __init mx6_sabresd_board_init(void)
 #ifndef	CONFIG_DSA2L
 	imx6q_add_mipi_csi2(&mipi_csi2_pdata);
 #endif	// CONFIG_DSA2L
-	imx6q_add_imx_snvs_rtc();
+	//imx6q_add_imx_snvs_rtc();
 
 	if (1 == caam_enabled)
 		imx6q_add_imx_caam();
@@ -2250,7 +2263,8 @@ static void __init mx6_sabresd_board_init(void)
 	//gps_power_on(true);
 	/* Register charger chips */
 	//platform_device_register(&sabresd_max8903_charger_1);
-	pm_power_off = mx6_snvs_poweroff;
+	//pm_power_off = mx6_snvs_poweroff;
+	pm_power_off = arch_poweroff;
 	imx6q_add_busfreq();
 
 	/* Add PCIe RC interface support
