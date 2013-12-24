@@ -124,7 +124,7 @@
 //#define SABRESD_CHARGE_CHG_1_B	IMX_GPIO_NR(3, 23)
 //#define SABRESD_TS_INT		IMX_GPIO_NR(3, 26)
 //#define SABRESD_DISP0_RD	IMX_GPIO_NR(3, 28)
-#define SABRESD_POWER_OFF	IMX_GPIO_NR(7, 13)
+//#define SABRESD_POWER_OFF	IMX_GPIO_NR(7, 13)
 
 //#define SABRESD_CAN1_STBY	IMX_GPIO_NR(4, 5)
 #define SABRESD_ECSPI1_CS0  IMX_GPIO_NR(4, 9)
@@ -207,7 +207,7 @@
 #define DSA2L_LED_R				IMX_GPIO_NR(7, 3)
 #define DSA2L_LED_B				IMX_GPIO_NR(7, 2)
 #define DSA2L_WIFI_DISABLE		IMX_GPIO_NR(7, 4)
-#define DSA2L_USB_OTG_PWR_IN	IMX_GPIO_NR(7, 4)
+#define DSA2L_USB_OTG_PWR_IN	IMX_GPIO_NR(7, 5)
 #define DSA2L_VGA_RST			IMX_GPIO_NR(1, 1)
 #define DSA2L_VGA_PWR_EN		IMX_GPIO_NR(7, 6)
 #define DSA2L_VGA_CABLE_IN		IMX_GPIO_NR(7, 7)
@@ -1861,8 +1861,8 @@ static void arch_poweroff(void)
 	gpio_request( DSA2L_PMIC_GPIO_RST , "GPIO_RST" );
 	gpio_direction_output( DSA2L_PMIC_GPIO_RST , 1 );
 	gpio_set_value( DSA2L_PMIC_GPIO_RST , 0 );
-	msleep(100);//100ms
-	gpio_set_value( DSA2L_PMIC_GPIO_RST , 1 );
+	//msleep(100);//100ms
+	//gpio_set_value( DSA2L_PMIC_GPIO_RST , 1 );
 	gpio_free( DSA2L_PMIC_INT );
 	// <- End.	
 }
