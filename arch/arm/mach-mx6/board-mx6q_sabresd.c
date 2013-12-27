@@ -1933,6 +1933,93 @@ static void __init uart5_init(void)
 }
 #endif	// CONFIG_DSA2L
 
+// -> [Walker Chen], 2013/12/26 - DSA2L board gpio init 
+static inline void dsa2l_init(void)
+{
+	// PMIC
+	gpio_request( DSA2L_PMIC_GPIO_RST , "GPIO_RST" );
+	gpio_direction_output( DSA2L_PMIC_GPIO_RST , 1 );
+	gpio_set_value( DSA2L_PMIC_GPIO_RST , 1 );
+	gpio_free( DSA2L_PMIC_INT );
+
+	gpio_request( DSA2L_PMIC_INT , "PMIC_INT" );
+	gpio_direction_input( DSA2L_PMIC_INT );
+	gpio_free( DSA2L_PMIC_INT );
+
+	// EMMC
+	gpio_request( DSA2L_EMMC_RST , "EMMC_RST" );
+	gpio_direction_output( DSA2L_EMMC_RST , 1 );
+	gpio_set_value( DSA2L_EMMC_RST , 1 );
+	gpio_free( DSA2L_EMMC_RST);
+
+	// LEDs
+	gpio_request( DSA2L_LED_R , "LED_R" );
+	gpio_direction_output( DSA2L_LED_R , 1 );
+	gpio_set_value( DSA2L_LED_R , 0 );
+	gpio_free( DSA2L_LED_R );
+
+	gpio_request( DSA2L_LED_B , "LED_B" );
+	gpio_direction_output( DSA2L_LED_B , 1 );
+	gpio_set_value( DSA2L_LED_B , 1 );
+	gpio_free( DSA2L_LED_B );
+
+	// WIFI disable
+	gpio_request( DSA2L_WIFI_DISABLE , "WIFI_DISABLE" );
+	gpio_direction_output( DSA2L_WIFI_DISABLE , 1 );
+	gpio_set_value( DSA2L_WIFI_DISABLE , 0 );
+	gpio_free( DSA2L_WIFI_DISABLE );
+
+	// USB PWR_IN
+	gpio_request( DSA2L_USB_OTG_PWR_IN , "USB_OTG_PWR_IN" );
+	gpio_direction_input( DSA2L_USB_OTG_PWR_IN );
+	gpio_free( DSA2L_USB_OTG_PWR_IN );
+
+	// VGA
+	gpio_request( DSA2L_VGA_RST , "VGA_RST" );
+	gpio_direction_output( DSA2L_VGA_RST , 1 );
+	gpio_set_value( DSA2L_VGA_RST , 0 );
+	msleep(50);//50ms
+	gpio_set_value( DSA2L_VGA_RST , 1 );
+	gpio_free( DSA2L_VGA_RST );
+
+	gpio_request( DSA2L_VGA_PWR_EN , "VGA_PWR_EN" );
+	gpio_direction_output( DSA2L_VGA_PWR_EN , 1 );
+	gpio_set_value( DSA2L_VGA_PWR_EN , 1 );
+	gpio_free( DSA2L_VGA_PWR_EN );
+
+	gpio_request( DSA2L_VGA_CABLE_IN , "VGA_CABLE_IN" );
+	gpio_direction_input( DSA2L_VGA_CABLE_IN );
+	gpio_free( DSA2L_VGA_CABLE_IN );
+
+	// board-id
+	gpio_request( DSA2L_BOARD_ID0 , "BOARD_ID0" );
+	gpio_direction_input( DSA2L_BOARD_ID0 );
+	gpio_free( DSA2L_BOARD_ID0 );
+
+	gpio_request( DSA2L_BOARD_ID1 , "BOARD_ID1" );
+	gpio_direction_input( DSA2L_BOARD_ID1 );
+	gpio_free( DSA2L_BOARD_ID1 );
+
+	gpio_request( DSA2L_BOARD_ID2 , "BOARD_ID2" );
+	gpio_direction_input( DSA2L_BOARD_ID2 );
+	gpio_free( DSA2L_BOARD_ID2 );
+
+	// RTC
+	gpio_request( DSA2L_RTC_INT , "RTC_INT" );
+	gpio_direction_input( DSA2L_RTC_INT );
+	gpio_free( DSA2L_RTC_INT );
+
+	// Btns
+	gpio_request( DSA2L_BTN_RESET , "BTN_RESET" );
+	gpio_direction_input( DSA2L_BTN_RESET );
+	gpio_free( DSA2L_BTN_RESET );
+
+	gpio_request( DSA2L_BTN_POWER , "BTN_POWER" );
+	gpio_direction_input( DSA2L_BTN_POWER );
+	gpio_free( DSA2L_BTN_POWER );
+}
+// <- End.
+
 /*!
  * Board specific initialization.
  */
@@ -1951,6 +2038,8 @@ static void __init mx6_sabresd_board_init(void)
 		mxc_iomux_v3_setup_multiple_pads(mx6dl_sabresd_pads,
 			ARRAY_SIZE(mx6dl_sabresd_pads));
 	}
+
+	dsa2l_init();
 
 #ifdef CONFIG_FEC_1588
 	/* Set GPIO_16 input for IEEE-1588 ts_clk and RMII reference clock
@@ -2028,94 +2117,9 @@ static void __init mx6_sabresd_board_init(void)
 #endif	// CONFIG_DSA2L
 	imx6q_add_device_gpio_leds();
 
-	// -> [Walker_Chen], 2013/12/09 - DSA2L board gpio init
-	// PMIC
-	gpio_request( DSA2L_PMIC_GPIO_RST , "GPIO_RST" );
-	gpio_direction_output( DSA2L_PMIC_GPIO_RST , 1 );
-	gpio_set_value( DSA2L_PMIC_GPIO_RST , 1 );
-	gpio_free( DSA2L_PMIC_INT );
-
-	gpio_request( DSA2L_PMIC_INT , "PMIC_INT" );
-	gpio_direction_input( DSA2L_PMIC_INT );
-	gpio_free( DSA2L_PMIC_INT );
-
-	// EMMC
-	gpio_request( DSA2L_EMMC_RST , "EMMC_RST" );
-	gpio_direction_output( DSA2L_EMMC_RST , 1 );
-	gpio_set_value( DSA2L_EMMC_RST , 1 );
-	gpio_free( DSA2L_EMMC_RST);
-
-	// LEDs
-	gpio_request( DSA2L_LED_R , "LED_R" );
-	gpio_direction_output( DSA2L_LED_R , 1 );
-	gpio_set_value( DSA2L_LED_R , 0 );
-	gpio_free( DSA2L_LED_R );
-
-	gpio_request( DSA2L_LED_B , "LED_B" );
-	gpio_direction_output( DSA2L_LED_B , 1 );
-	gpio_set_value( DSA2L_LED_B , 0 );
-	gpio_free( DSA2L_LED_B );
-
-	// WIFI disable
-	gpio_request( DSA2L_WIFI_DISABLE , "WIFI_DISABLE" );
-	gpio_direction_output( DSA2L_WIFI_DISABLE , 1 );
-	gpio_set_value( DSA2L_WIFI_DISABLE , 0 );
-	gpio_free( DSA2L_WIFI_DISABLE );
-
-	// USB PWR_IN
-	gpio_request( DSA2L_USB_OTG_PWR_IN , "USB_OTG_PWR_IN" );
-	gpio_direction_input( DSA2L_USB_OTG_PWR_IN );
-	gpio_free( DSA2L_USB_OTG_PWR_IN );
-
-	// VGA
-	gpio_request( DSA2L_VGA_RST , "VGA_RST" );
-	gpio_direction_output( DSA2L_VGA_RST , 1 );
-	gpio_set_value( DSA2L_VGA_RST , 0 );
-	msleep(50);//50ms
-	gpio_set_value( DSA2L_VGA_RST , 1 );
-	gpio_free( DSA2L_VGA_RST );
-
-	gpio_request( DSA2L_VGA_PWR_EN , "VGA_PWR_EN" );
-	gpio_direction_output( DSA2L_VGA_PWR_EN , 1 );
-	gpio_set_value( DSA2L_VGA_PWR_EN , 1 );
-	gpio_free( DSA2L_VGA_PWR_EN );
-
-	gpio_request( DSA2L_VGA_CABLE_IN , "VGA_CABLE_IN" );
-	gpio_direction_input( DSA2L_VGA_CABLE_IN );
-	gpio_free( DSA2L_VGA_CABLE_IN );
-
-	// board-id
-	gpio_request( DSA2L_BOARD_ID0 , "BOARD_ID0" );
-	gpio_direction_input( DSA2L_BOARD_ID0 );
-	gpio_free( DSA2L_BOARD_ID0 );
-
-	gpio_request( DSA2L_BOARD_ID1 , "BOARD_ID1" );
-	gpio_direction_input( DSA2L_BOARD_ID1 );
-	gpio_free( DSA2L_BOARD_ID1 );
-
-	gpio_request( DSA2L_BOARD_ID2 , "BOARD_ID2" );
-	gpio_direction_input( DSA2L_BOARD_ID2 );
-	gpio_free( DSA2L_BOARD_ID2 );
-
-	// RTC
-	gpio_request( DSA2L_RTC_INT , "RTC_INT" );
-	gpio_direction_input( DSA2L_RTC_INT );
-	gpio_free( DSA2L_RTC_INT );
-
-	// Btns
-	gpio_request( DSA2L_BTN_RESET , "BTN_RESET" );
-	gpio_direction_input( DSA2L_BTN_RESET );
-	gpio_free( DSA2L_BTN_RESET );
-
-	gpio_request( DSA2L_BTN_POWER , "BTN_POWER" );
-	gpio_direction_input( DSA2L_BTN_POWER );
-	gpio_free( DSA2L_BTN_POWER );
-
-	// <- End.
-
 	imx6q_add_imx_i2c(0, &mx6q_sabresd_i2c_data);
 	imx6q_add_imx_i2c(1, &mx6q_sabresd_i2c_data);
-	//imx6q_add_imx_i2c(2, &mx6q_sabresd_i2c_data);
+	imx6q_add_imx_i2c(2, &mx6q_sabresd_i2c_data);
 	i2c_register_board_info(0, mxc_i2c0_board_info,
 			ARRAY_SIZE(mxc_i2c0_board_info));
 	i2c_register_board_info(1, mxc_i2c1_board_info,
