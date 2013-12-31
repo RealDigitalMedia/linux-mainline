@@ -1629,7 +1629,7 @@ static struct gpio_led imx6q_gpio_leds[] = {
 		.active_low		= 0,
 		.retain_state_suspended = 1,
 		.default_state		= 1,
-		.default_trigger	= "heartbeat",	
+		.default_trigger	= "timer",	
 	},
 
 /* For the latest B4 board, this GPIO_1 is connected to POR_B,
@@ -1695,7 +1695,7 @@ static struct gpio_keys_button new_sabresd_buttons[] = {
 	//GPIO_BUTTON(SABRESD_VOLUME_UP, KEY_VOLUMEUP, 1, "volume-up", 0, 1),
 	//GPIO_BUTTON(SABRESD_VOLUME_DN, KEY_VOLUMEDOWN, 1, "volume-down", 0, 1),
 	//GPIO_BUTTON(SABRESD_POWER_OFF, KEY_POWER, 1, "power-key", 1, 1),
-	GPIO_BUTTON(DSA2L_BTN_POWER, KEY_POWER, 1, "power-key", 1, 1),
+	GPIO_BUTTON(DSA2L_BTN_POWER, KEY_POWER, 0, "power-key", 1, 1),
 	GPIO_BUTTON(DSA2L_BTN_RESET, KEY_VOLUMEDOWN, 1, "volume-down", 0, 1),
 };
 
