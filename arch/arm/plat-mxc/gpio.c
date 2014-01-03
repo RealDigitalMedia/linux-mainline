@@ -223,6 +223,9 @@ static int gpio_set_wake_irq(struct irq_data *d, u32 enable)
 	u32 gpio_idx = gpio & 0x1F;
 	struct mxc_gpio_port *port = &mxc_gpio_ports[gpio / 32];
 
+	// -> [J.Chiang], 2014/01/02 - Debug
+	printk("set IRQ%d(port=%d, GPIO=%d) to be a wakeup source......\n", d->irq, ((gpio/32)+1), gpio_idx);
+	// <- End.
 	if (enable) {
 		if (port->irq_high && (gpio_idx >= 16))
 			enable_irq_wake(port->irq_high);

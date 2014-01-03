@@ -310,6 +310,12 @@ static int mx6_suspend_enter(suspend_state_t state)
 				wake_irq_isr[2], wake_irq_isr[3]);
 		return 0;
 	}
+	// -> [J.Chiang], 2014/01/02 - Added for debugging
+	else {
+		printk("IRQ status is clean, wait wakup source: 0x%x, 0x%x, 0x%x, 0x%x\n", 
+		       gpc_wake_irq[0], gpc_wake_irq[1], gpc_wake_irq[2], gpc_wake_irq[3]);
+	}
+	// <- End.
 	mx6_suspend_store();
 
 	/*

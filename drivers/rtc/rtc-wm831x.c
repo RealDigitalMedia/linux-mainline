@@ -25,6 +25,11 @@
 #include <linux/delay.h>
 #include <linux/platform_device.h>
 
+// -> [J.Chiang], 2014/01/02 
+#include <mach/gpio.h>
+
+#define DSA2L_PMIC_INT IMX_GPIO_NR(7, 11)
+// <- End.
 
 /*
  * R16416 (0x4020) - RTC Write Counter
@@ -354,6 +359,11 @@ static int wm831x_rtc_suspend(struct device *dev)
 	else
 		enable = 0;
 
+	// -> [J.Chiang], 2014/01/02
+	printk( "'wm831x_rtc_irq_enable' was called,set  RTC_PMIC_INT(%d) to %d...\n", gpio_to_irq(DSA2L_PMIC_INT), enable);
+	irq_set_irq_wake( gpio_to_irq(DSA2L_PMIC_INT), enable);
+	// <- End.
+	
 	ret = wm831x_set_bits(wm831x_rtc->wm831x, WM831X_RTC_CONTROL,
 			      WM831X_RTC_ALM_ENA, enable);
 	if (ret != 0)
