@@ -49,8 +49,12 @@ extern u32 enable_ldo_mode;
 
 #define WM831X_DC1_ON_CONFIG_VAL            (0x44<<WM831X_DC1_ON_VSEL_SHIFT)
 #define WM831X_DC2_ON_CONFIG_VAL            (0x44<<WM831X_DC2_ON_VSEL_SHIFT)
+#ifdef	CONFIG_DSA2L
+/* changed DC2DC3 to 1.35V */
+#define WM831X_DC3_ON_CONFIG_VAL            (0x14<<WM831X_DC3_ON_VSEL_SHIFT)
+#else	// CONFIG_DSA2L
 #define WM831X_DC3_ON_CONFIG_VAL            (0x1A<<WM831X_DC3_ON_VSEL_SHIFT)
-
+#endif	// CONFIG_DSA2L
 #endif
 
 #define WM831X_DC1_DVS_MODE_VAL	(0x02<<WM831X_DC1_DVS_SRC_SHIFT)
@@ -125,6 +129,37 @@ static int wm8326_post_init(struct wm831x *wm831x)
 
 #ifdef CONFIG_REGULATOR
 /* ARM core */
+#ifdef	CONFIG_DSA2L
+static struct regulator_consumer_supply dsa2l_ldo1_consumers[] = {
+	{
+		.supply     = "DCVDD",
+		.dev_name   = "0-001a",
+	},
+	{
+		.supply     = "DBVDD",
+		.dev_name   = "0-001a",
+	},
+	{
+		.supply     = "AVDD",
+		.dev_name   = "0-001a",
+	},
+	{
+		.supply     = "CPVDD",
+		.dev_name   = "0-001a",
+	},
+	{
+		.supply     = "PLLVDD",
+		.dev_name   = "0-001a",
+	}
+};
+
+static struct regulator_consumer_supply dsa2l_ldo7_consumers[] = {
+	{
+		.supply     = "MICVDD",
+		.dev_name   = "0-001a",
+	}
+};
+#else	// CONFIG_DSA2L
 #ifdef CONFIG_MX6_INTER_LDO_BYPASS
 static struct regulator_consumer_supply dsa2l_vddarm_consumers[] = {
 	{
@@ -137,7 +172,8 @@ static struct regulator_consumer_supply dsa2l_vddsoc_consumers[] = {
 		.supply     = "VDDSOC_DCDC2",
 	}
 };
-#endif
+#endif	// CONFIG_MX6_INTER_LDO_BYPASS
+#endif	// CONFIG_DSA2L
 
 static struct regulator_init_data dsa2l_vddarm_dcdc1 = {
 	.constraints = {
@@ -175,24 +211,44 @@ static struct regulator_init_data dsa2l_vddsoc_dcdc2 = {
 };
 
 
-
-static struct regulator_init_data dsa2l_vddmem_1v5_dcdc3 = {
+static struct regulator_init_data dsa2l_vdd1v8_ldo1 = {
 	.constraints = {
-		.name = "vdd_mem_1v5",
-		.min_uV = 1400000,
-		.max_uV = 1500000,
+		.name = "vdd_1v8_ldo1",
+		.min_uV = 1700000,
+		.max_uV = 1800000,
 		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE,
 		.always_on = 1,
 		.boot_on = 1,
 	},
+	.num_consumer_supplies = ARRAY_SIZE(dsa2l_ldo1_consumers),
+	.consumer_supplies = dsa2l_ldo1_consumers,
 };
-#endif
+
+static struct regulator_init_data dsa2l_vdd2v5_ldo7 = {
+	.constraints = {
+		.name = "vdd_2v5_ldo7",
+		.min_uV = 2400000,
+		.max_uV = 2500000,
+		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE,
+		.always_on = 1,
+		.boot_on = 1,
+	},
+	.num_consumer_supplies = ARRAY_SIZE(dsa2l_ldo7_consumers),
+	.consumer_supplies = dsa2l_ldo7_consumers,
+};
+#endif	// CONFIG_REGULATOR
 
 static struct wm831x_pdata dsa2l_wm8326_pdata = {
 #ifdef CONFIG_REGULATOR
 	.dcdc = {
 		&dsa2l_vddarm_dcdc1,  /* DCDC1 */
 		&dsa2l_vddsoc_dcdc2,  /* DCDC2 */
+		// -> [J.Chiang], 2014/01/03 - Added for other regulators
+#ifdef	CONFIG_DSA2L
+		&dsa2l_vdd1v8_ldo1,  /* LDO1 */
+		&dsa2l_vdd2v5_ldo7, /* LDO7 */
+#endif	// CONFIG_DSA2L
+		// <- End.
 	},
 #endif
 	.post_init = wm8326_post_init,
