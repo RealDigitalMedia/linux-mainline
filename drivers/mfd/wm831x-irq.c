@@ -439,8 +439,8 @@ static irqreturn_t wm831x_irq_thread(int irq, void *data)
 
 	primary = wm831x_reg_read(wm831x, WM831X_SYSTEM_INTERRUPTS);
 	if (primary < 0) {
-		dev_err(wm831x->dev, "Failed to read system interrupt: %d\n",
-			primary);
+		dev_err(wm831x->dev, "IRQ=%d, Failed to read system interrupt: %d\n",
+			irq, primary);
 		goto out;
 	}
 
