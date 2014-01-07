@@ -493,7 +493,7 @@ static struct mxc_audio_platform_data wm8962_data = {
 	.ext_port = 3,
 	.hp_gpio = SABRESD_HEADPHONE_DET,
 	.hp_active_low = 1,
-	.mic_gpio = SABRESD_MICROPHONE_DET,
+	.mic_gpio = -1,
 	.mic_active_low = 1,
 	.init = mxc_wm8962_init,
 	.clock_enable = wm8962_clk_enable,
@@ -1330,19 +1330,19 @@ static struct imx_asrc_platform_data imx_asrc_data = {
 
 static struct ipuv3_fb_platform_data sabresd_fb_data[] = {
 	{ /*fb0*/
-	.disp_dev = "hdmi",
-	.interface_pix_fmt = IPU_PIX_FMT_RGB24,
-	.mode_str = "1920x1080M@60",
-	.default_bpp = 32,
-	.int_clk = false,
-	.late_init = false,
-	}, {
 	.disp_dev = "ldb",
 	.interface_pix_fmt = IPU_PIX_FMT_RGB666,
 	.mode_str = "LDB-XGA",
 	.default_bpp = 16,
 	.int_clk = false,
 	.late_init = false,
+	}, {
+	.disp_dev = "hdmi",
+	.interface_pix_fmt = IPU_PIX_FMT_RGB24,
+	.mode_str = "1920x1080M@60",
+	.default_bpp = 32,
+	.int_clk = false,
+	.late_init = false,		
 	}, {
 	.disp_dev = "ldb",
 	.interface_pix_fmt = IPU_PIX_FMT_RGB666,
@@ -1423,7 +1423,8 @@ static struct fsl_mxc_ldb_platform_data ldb_data = {
 	.ipu_id = 0,
 	.disp_id = 1,
 	.ext_ref = 1,
-	.mode = LDB_SEP1,
+	//.mode = LDB_SEP1,
+	.mode = LDB_SEP0,
 	.sec_ipu_id = 0,
 	.sec_disp_id = 0,
 };
@@ -1576,7 +1577,7 @@ static int __init imx6q_init_audio(void)
 				    &wm8962_data);
 		imx6q_add_imx_ssi(1, &mx6_sabresd_ssi_pdata);
 
-		mxc_wm8962_init();
+		mxc_wm8962_init();		
 #ifndef CONFIG_DSA2L
 	}
 #endif	// CONFIG_DSA2L
@@ -1933,6 +1934,34 @@ static void __init uart5_init(void)
 }
 #endif	// CONFIG_DSA2L
 
+static int spdif_clk_set_rate(struct clk *clk, unsigned long rate)
+{
+	unsigned long rate_actual;
+	rate_actual = clk_round_rate(clk, rate);
+	clk_set_rate(clk, rate_actual);
+	return 0;
+}
+
+static struct mxc_spdif_platform_data mxc_spdif_data = {
+	.spdif_tx		= 1,		/* enable tx */
+	.spdif_rx		= 0,		/* dissable rx */
+	/*
+	 * spdif0_clk will be 454.7MHz divided by ccm dividers.
+	 *
+	 * 44.1KHz: 454.7MHz / 7 (ccm) / 23 (spdif) = 44,128 Hz ~ 0.06% error
+	 * 48KHz:   454.7MHz / 4 (ccm) / 37 (spdif) = 48,004 Hz ~ 0.01% error
+	 * 32KHz:   454.7MHz / 6 (ccm) / 37 (spdif) = 32,003 Hz ~ 0.01% error
+	 */
+	.spdif_clk_44100	= 1,    /* tx clk from spdif0_clk_root */
+	.spdif_clk_48000	= 1,    /* tx clk from spdif0_clk_root */
+	.spdif_div_44100	= 23,
+	.spdif_div_48000	= 37,
+	.spdif_div_32000	= 37,
+	.spdif_rx_clk		= 0,    /* rx clk from spdif stream */
+	.spdif_clk_set_rate	= spdif_clk_set_rate,
+	.spdif_clk		= NULL, /* spdif bus clk */
+};
+
 // -> [Walker Chen], 2013/12/26 - DSA2L board gpio init 
 static inline void dsa2l_init(void)
 {
@@ -1977,8 +2006,8 @@ static inline void dsa2l_init(void)
 	// VGA
 	gpio_request( DSA2L_VGA_RST , "VGA_RST" );
 	gpio_direction_output( DSA2L_VGA_RST , 1 );
-	gpio_set_value( DSA2L_VGA_RST , 0 );
-	msleep(50);//50ms
+	//gpio_set_value( DSA2L_VGA_RST , 0 );
+	//msleep(50);//50ms
 	gpio_set_value( DSA2L_VGA_RST , 1 );
 	gpio_free( DSA2L_VGA_RST );
 
@@ -2138,6 +2167,14 @@ static void __init mx6_sabresd_board_init(void)
 	//	mx6q_sabresd_init_pfuze100(SABRESD_PFUZE_INT);
 	//}
 #endif	// CONFIG_DSA2L
+
+	/* spdif */
+	mxc_spdif_data.spdif_core_clk = clk_get_sys("mxc_spdif.0", NULL);
+	clk_put(mxc_spdif_data.spdif_core_clk);
+	imx6q_add_spdif(&mxc_spdif_data);
+	imx6q_add_spdif_dai();
+	imx6q_add_spdif_audio_device();
+	
 	/* SPI */
 	imx6q_add_ecspi(0, &mx6q_sabresd_spi_data);
 	spi_device_init();
