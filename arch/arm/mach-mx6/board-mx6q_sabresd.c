@@ -1342,15 +1342,8 @@ static struct ipuv3_fb_platform_data sabresd_fb_data[] = {
 	.mode_str = "1920x1080M@60",
 	.default_bpp = 32,
 	.int_clk = false,
-	.late_init = false,		
-	}, {
-	.disp_dev = "ldb",
-	.interface_pix_fmt = IPU_PIX_FMT_RGB666,
-	.mode_str = "LDB-XGA",
-	.default_bpp = 16,
-	.int_clk = false,
-	.late_init = false,
-	},
+	.late_init = false,	
+	}, 
 };
 
 static void hdmi_init(int ipu_id, int disp_id)
@@ -1415,7 +1408,7 @@ static struct fsl_mxc_hdmi_core_platform_data hdmi_core_data = {
 
 static struct fsl_mxc_lcd_platform_data lcdif_data = {
 	.ipu_id = 0,
-	.disp_id = 0,
+	.disp_id = 1,
 	.default_ifmt = IPU_PIX_FMT_RGB565,
 };
 
@@ -1424,7 +1417,7 @@ static struct fsl_mxc_ldb_platform_data ldb_data = {
 	.disp_id = 1,
 	.ext_ref = 1,
 	//.mode = LDB_SEP1,
-	.mode = LDB_SEP0,
+	.mode = LDB_DUL_DI1, // [Walker Chen], bouth lvds chennal used DISP1
 	.sec_ipu_id = 0,
 	.sec_disp_id = 0,
 };
@@ -2099,6 +2092,11 @@ static void __init mx6_sabresd_board_init(void)
 	 * MX6DL/Solo
 	 */
 	if (cpu_is_mx6dl()) {
+		/* [Walker Chen], 2014/01/08 - modified for dual display mode
+			mx6dl only have one ipu
+			ipu0:disp0 for HDMI
+			ipu0:disp1 for LVDS
+		*/
 		ldb_data.ipu_id = 0;
 		ldb_data.disp_id = 1;
 		hdmi_core_data.ipu_id = 0;
@@ -2106,6 +2104,7 @@ static void __init mx6_sabresd_board_init(void)
 		//mipi_dsi_pdata.ipu_id = 0;
 		//mipi_dsi_pdata.disp_id = 1;
 		ldb_data.sec_ipu_id = 0;
+		ldb_data.sec_disp_id = 0;
 	}
 	imx6q_add_mxc_hdmi_core(&hdmi_core_data);
 
