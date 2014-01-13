@@ -263,10 +263,10 @@ static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 	// <- End.
 	},
 	// Reserve for CH7036...
-	//{
-	//I2C_BOARD_INFO("ch7036", 0x76),
+	{
+	I2C_BOARD_INFO("ch7036", 0x76),
 	//.platform_data = &dsa2l_ch7036_pdata,
-	//},
+	},
 };
 
 int __init mx6q_dsa2l_init_wm8326(void)
