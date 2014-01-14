@@ -273,6 +273,9 @@ static int wm831x_rtc_setalarm(struct device *dev, struct rtc_wkalrm *alrm)
 	int ret;
 	unsigned long time;
 
+	// -> [J.Chiang], Debug
+	printk("wm831x_rtc_setalarm is called...\n");
+	// <- End.
 	ret = rtc_tm_to_time(&alrm->time, &time);
 	if (ret < 0) {
 		dev_err(dev, "Failed to convert time: %d\n", ret);
@@ -312,6 +315,9 @@ static int wm831x_rtc_setalarm(struct device *dev, struct rtc_wkalrm *alrm)
 static int wm831x_rtc_alarm_irq_enable(struct device *dev,
 				       unsigned int enabled)
 {
+	// -> [J.Chiang], Debug
+	printk("wm831x_rtc_alarm_irq set to 0x%x...\n", enabled);
+	// <- End.
 	struct wm831x_rtc *wm831x_rtc = dev_get_drvdata(dev);
 
 	if (enabled)
@@ -360,7 +366,7 @@ static int wm831x_rtc_suspend(struct device *dev)
 		enable = 0;
 
 	// -> [J.Chiang], 2014/01/02
-	printk( "'wm831x_rtc_irq_enable' was called,set  RTC_PMIC_INT(%d) to %d...\n", gpio_to_irq(DSA2L_PMIC_INT), enable);
+	printk( "'wm831x_rtc_suspend' was called,set  RTC_PMIC_INT(%d) to %d...\n", gpio_to_irq(DSA2L_PMIC_INT), enable);
 	irq_set_irq_wake( gpio_to_irq(DSA2L_PMIC_INT), enable);
 	// <- End.
 	

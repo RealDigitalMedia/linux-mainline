@@ -13,7 +13,7 @@ obj-$(CONFIG_MACH_MX6SL_ARM2) += board-mx6sl_arm2.o mx6sl_arm2_pmic_pfuze100.o
 obj-$(CONFIG_MACH_MX6SL_EVK) += board-mx6sl_evk.o mx6sl_evk_pmic_pfuze100.o
 obj-$(CONFIG_MACH_MX6Q_SABRELITE) += board-mx6q_sabrelite.o
 ifeq ($(CONFIG_DSA2L), y)
-	obj-$(CONFIG_MACH_MX6Q_SABRESD) += board-mx6q_sabresd.o mx6q_dsa2l_pmic_wm831x.o
+	obj-$(CONFIG_MACH_MX6Q_SABRESD) += board-mx6q_dsa2l.o mx6q_dsa2l_pmic_wm831x.o
 else
 	obj-$(CONFIG_MACH_MX6Q_SABRESD) += board-mx6q_sabresd.o mx6q_sabresd_pmic_pfuze100.o
 endif

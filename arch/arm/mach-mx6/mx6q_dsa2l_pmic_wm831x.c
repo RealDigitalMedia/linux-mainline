@@ -84,6 +84,7 @@ extern u32 enable_ldo_mode;
 						WM831X_GPN_PULL_MASK|WM831X_GPN_POL_MASK|WM831X_GPN_FN_MASK)
 
 
+#define WM831X_GPIO6_VAL	(WM831X_GPN_POL_VAL|WM831X_GPN_ENA_VAL)
 #define WM831X_GPIO7_VAL	(WM831X_GPN_DIR_VAL|WM831X_GPN_PULL_VAL|WM831X_GPN_INT_MODE_VAL| \
 						WM831X_GPN_POL_VAL|WM831X_GPN_ENA_VAL|WM831X_GPN_FN_VAL_HW_EN)
 #define WM831X_GPIO8_VAL	(WM831X_GPN_DIR_VAL|WM831X_GPN_PULL_VAL|WM831X_GPN_INT_MODE_VAL| \
@@ -112,6 +113,10 @@ static int wm8326_post_init(struct wm831x *wm831x)
 	wm831x_set_bits(wm831x, WM831X_DC1_DVS_CONTROL, WM831X_DC1_DVS_MASK, WM831X_DC1_DVS_VAL);
 	wm831x_set_bits(wm831x, WM831X_DC2_DVS_CONTROL, WM831X_DC2_DVS_MASK, WM831X_DC2_DVS_VAL);
 
+	// set GPIO6 to be output and value="high" (bit5)
+	wm831x_set_bits(wm831x, WM831X_GPIO6_CONTROL, WM831X_GPIO7_8_9_MASK, WM831X_GPIO6_VAL);
+	wm831x_set_bits(wm831x, WM831X_GPIO_LEVEL, 0x1 << 5, 0x1 << 5);
+	
 	wm831x_set_bits(wm831x, WM831X_GPIO7_CONTROL, WM831X_GPIO7_8_9_MASK, WM831X_GPIO7_VAL);
 	wm831x_set_bits(wm831x, WM831X_GPIO8_CONTROL, WM831X_GPIO7_8_9_MASK, WM831X_GPIO8_VAL);
 	wm831x_set_bits(wm831x, WM831X_GPIO9_CONTROL, WM831X_GPIO7_8_9_MASK, WM831X_GPIO9_VAL);
@@ -263,10 +268,10 @@ static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 	// <- End.
 	},
 	// Reserve for CH7036...
-	//{
-	//I2C_BOARD_INFO("ch7036", 0x76),
+	{
+	I2C_BOARD_INFO("ch7036", 0x76),
 	//.platform_data = &dsa2l_ch7036_pdata,
-	//},
+	},
 };
 
 int __init mx6q_dsa2l_init_wm8326(void)

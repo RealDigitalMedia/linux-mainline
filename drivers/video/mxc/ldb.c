@@ -106,17 +106,43 @@ static struct i2c_client *ldb_i2c_client[2];
 static u8 g_edid[2][512];
 
 static struct fb_videomode ldb_modedb[] = {
+	// -> [Walker Chen], 2014/01/09 - change WXGA to 1366x768
+	//{
+	// "LDB-WXGA", 60, 1280, 800, 14065,
+	// 40, 40,
+	// 10, 3,
+	// 80, 10,
+	// 0,
+	// FB_VMODE_NONINTERLACED,
+	// FB_MODE_IS_DETAILED,},
 	{
-	 "LDB-WXGA", 60, 1280, 800, 14065,
-	 40, 40,
-	 10, 3,
-	 80, 10,
+	 "LDB-WXGA", 60, 1366, 768, 13158, // pixel clock 76Mhz => 1/76MHz = 13158pSec 
+	 190, 10,  // 194
+	 30, 8,   // 38
+	 65, 12,
 	 0,
 	 FB_VMODE_NONINTERLACED,
 	 FB_MODE_IS_DETAILED,},
+	//{
+	// "LDB-WVGA", 60, 800, 480, 31250, // pixel clock 32Mhz => 1/32MHz = 31250pSec 
+	// 220, 40,
+	// 21, 7,
+	// 60, 10,
+	// 0,
+	// FB_VMODE_NONINTERLACED,
+	// FB_MODE_IS_DETAILED,}, 
+	{
+	 "LDB-WVGA", 60, 1024, 600, 21067,
+	 170, 7,
+	 24, 7,
+	 80, 8,
+	 0,
+	 FB_VMODE_NONINTERLACED,
+	 FB_MODE_IS_DETAILED,},
+	 // <- End.
 	{
 	 "LDB-XGA", 60, 1024, 768, 15385,
-	 220, 40,
+	 190, 10,
 	 21, 7,
 	 60, 10,
 	 0,

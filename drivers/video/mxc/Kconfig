@@ -68,6 +68,9 @@ config FB_MXC_CH7026
 	depends on FB_MXC_SYNC_PANEL
 	tristate "Chrontel CH7026 VGA Interface Chip"
 
+config FB_MXC_CH7036
+	tristate "Chrontel CH7036 VGA Interface Chip"
+	
 config FB_MXC_TVOUT_CH7024
 	tristate "CH7024 TV Out Encoder"
 	depends on FB_MXC_SYNC_PANEL
