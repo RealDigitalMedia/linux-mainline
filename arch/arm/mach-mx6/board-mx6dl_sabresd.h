@@ -187,6 +187,8 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	MX6DL_PAD_GPIO_18__GPIO_7_13,	/* Power ON BTN */
 	MX6DL_PAD_KEY_ROW4__GPIO_4_15,	/* Reset BTN */
 	
+	/* phy WOL */
+	MX6DL_PAD_ENET_TX_EN__GPIO_1_28,
 };
 
 static iomux_v3_cfg_t mx6dl_sabresd_csi0_sensor_pads[] = {

@@ -112,6 +112,7 @@
 #define DSA2L_VGA_PWR_EN		IMX_GPIO_NR(7, 6)
 #define DSA2L_VGA_CABLE_IN		IMX_GPIO_NR(7, 7)
 #define DSA2L_BTN_POWER			IMX_GPIO_NR(7, 13)
+#define DSA2L_WOL_IRQ			IMX_GPIO_NR(1, 28)
 
 #ifdef CONFIG_MX6_ENET_IRQ_TO_GPIO
 #define MX6_ENET_IRQ		IMX_GPIO_NR(1, 6)
@@ -203,6 +204,7 @@ static struct fec_platform_data fec_data __initdata = {
 #ifdef CONFIG_MX6_ENET_IRQ_TO_GPIO
 	.gpio_irq = MX6_ENET_IRQ,
 #endif
+	.wol_irq = DSA2L_WOL_IRQ,
 };
 
 static int mx6q_sabresd_spi_cs[] = {

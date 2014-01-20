@@ -889,7 +889,9 @@ int genphy_suspend(struct phy_device *phydev)
 	mutex_lock(&phydev->lock);
 
 	value = phy_read(phydev, MII_BMCR);
-	phy_write(phydev, MII_BMCR, (value | BMCR_PDOWN));
+	//phy_write(phydev, MII_BMCR, (value | BMCR_PDOWN));
+	phy_write(phydev, MII_BMCR, (value | BMCR_ISOLATE));
+	
 
 	mutex_unlock(&phydev->lock);
 

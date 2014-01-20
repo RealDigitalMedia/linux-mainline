@@ -881,7 +881,13 @@ fec_enet_interrupt(int irq, void *dev_id)
 
 	return ret;
 }
-
+static irqreturn_t
+phy_wol_interrupt(int irq, void *dev_id)
+{
+	printk("%s\n", __func__);
+	return IRQ_HANDLED;
+ 
+}
 
 
 /* ------------------------------------------------------------------------- */
@@ -1076,6 +1082,32 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	phy_dev = phy_connect(ndev, phy_name, &fec_enet_adjust_link, 0,
 		fep->phy_interface);
 
+	// -> [Walker Chen], 2014/01/20 - DSA2L, WOL enable
+	unsigned short val;	
+	val = phy_read(phy_dev, 0x12);
+	val |= 0x01;	
+	phy_write(phy_dev, 0xd, val);
+		
+	phy_write( phy_dev, 0xd, 0x3);
+	phy_write( phy_dev, 0xe, 0x804A);
+	phy_write( phy_dev, 0xd, 0xc003);
+	val = ( ndev->dev_addr[0] << 0x8) | ndev->dev_addr[1];
+	phy_write( phy_dev, 0xe, val );
+	val = ( ndev->dev_addr[2] << 0x8) | ndev->dev_addr[3];
+	phy_write( phy_dev, 0xe, val);
+	val = ( ndev->dev_addr[4] << 0x8) | ndev->dev_addr[5];
+	phy_write( phy_dev, 0xe, val );
+	/*
+	printk("wol:mac_address=%02x:%02x:%02x:%02x:%02x:%02x\n",
+		ndev->dev_addr[0],
+		ndev->dev_addr[1],
+		ndev->dev_addr[2],
+		ndev->dev_addr[3],
+		ndev->dev_addr[4],
+		ndev->dev_addr[5]	);
+	*/
+	// <- End.
+	
 	if (IS_ERR(phy_dev)) {
 		printk(KERN_ERR "%s: could not attach to PHY\n", ndev->name);
 		return PTR_ERR(phy_dev);
@@ -1899,6 +1931,17 @@ fec_probe(struct platform_device *pdev)
 		}
 	}
 #endif
+
+	if (pdata->wol_irq > 0) {
+		gpio_request(pdata->wol_irq, "gpio_wol_irq");
+		gpio_direction_input(pdata->wol_irq);
+		irq = gpio_to_irq(pdata->wol_irq);
+		irq_set_irq_wake( irq , 1 );
+		ret = request_irq(irq, phy_wol_interrupt,
+				IRQF_TRIGGER_FALLING,
+				 "enet_wol", ndev);
+		enable_irq_wake(irq);
+	}
 
 	fep->clk = clk_get(&pdev->dev, "fec_clk");
 	if (IS_ERR(fep->clk)) {
