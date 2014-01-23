@@ -740,6 +740,10 @@ static struct gpio_keys_button new_sabresd_buttons[] = {
 	//GPIO_BUTTON(SABRESD_POWER_OFF, KEY_POWER, 1, "power-key", 1, 1),
 	GPIO_BUTTON(DSA2L_BTN_POWER, KEY_POWER, 0, "power-key", 1, 1),
 	GPIO_BUTTON(DSA2L_BTN_RESET, KEY_VOLUMEDOWN, 1, "volume-down", 0, 1),
+	// -> [J.Chiang], 2014/01/22 - Added for WOL
+	GPIO_BUTTON(DSA2L_WOL_IRQ, KEY_POWER, 1, "power-key-wol", 1, 1),
+	GPIO_BUTTON(SABRESD_RGMII_INT, KEY_POWER, 1, "power-key-phy", 1, 1),
+	// <- End.
 };
 
 static struct gpio_keys_platform_data new_sabresd_button_data = {

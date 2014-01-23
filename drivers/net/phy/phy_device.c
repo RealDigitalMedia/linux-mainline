@@ -888,6 +888,19 @@ int genphy_suspend(struct phy_device *phydev)
 
 	mutex_lock(&phydev->lock);
 
+	// -> [J.Chiang], 2014/01/22 - WOL implementation. Enable WOL function when suspend.
+	unsigned short val, phy_id;	
+
+	// Read Interrupt Status register to clear WOL event
+	val = phy_read(phydev, 0x13);
+
+	phy_id = phy_read(phydev, 0x03);
+	val = phy_read(phydev, 0x12);
+	val |= 0x01;	
+	phy_write(phydev, 0x12, val);
+	printk("enable WOL, PHY_ID=%x, val=%x\n", phy_id, val);
+	// <- End.
+	
 	value = phy_read(phydev, MII_BMCR);
 	//phy_write(phydev, MII_BMCR, (value | BMCR_PDOWN));
 	phy_write(phydev, MII_BMCR, (value | BMCR_ISOLATE));
@@ -906,8 +919,22 @@ int genphy_resume(struct phy_device *phydev)
 	mutex_lock(&phydev->lock);
 
 	value = phy_read(phydev, MII_BMCR);
-	phy_write(phydev, MII_BMCR, (value & ~BMCR_PDOWN));
+	//phy_write(phydev, MII_BMCR, (value & ~BMCR_PDOWN));
+	phy_write(phydev, MII_BMCR, (value & ~BMCR_ISOLATE));
 
+	// -> [J.Chiang], 2014/01/22 - WOL implementation. Enable WOL function when suspend.
+	unsigned short val, phy_id;	
+
+	// Read Interrupt Status register to clear WOL event
+	val = phy_read(phydev, 0x13);
+
+	phy_id = phy_read(phydev, 0x03);
+	val = phy_read(phydev, 0x12);
+	val &= ~(0x01);	
+	phy_write(phydev, 0x12, val);
+	printk("disable WOL, PHY_ID=%x, val=%x\n", phy_id, val);
+	// <- End.
+	
 	mutex_unlock(&phydev->lock);
 
 	return 0;
