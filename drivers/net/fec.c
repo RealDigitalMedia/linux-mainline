@@ -1086,11 +1086,11 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	unsigned short val;	
 	
 	// -> [J.Chiang], 2014/01/22 - WOL implementation, moved the following setting to suspend/resume handlers
-	//val = phy_read(phy_dev, 0x12);
-	//val |= 0x01;	
-	//phy_write(phy_dev, 0x1, val);
+	val = phy_read(phy_dev, 0x12);
+	val &= ~0x01;
+	phy_write(phy_dev, 0x12, val);
 	// <- End.
-		
+
 	phy_write( phy_dev, 0xd, 0x3);
 	phy_write( phy_dev, 0xe, 0x804A);
 	phy_write( phy_dev, 0xd, 0xc003);
@@ -2062,27 +2062,6 @@ fec_suspend(struct device *dev)
 	return 0;
 }
 
-// -> [J.Chiang], 2014/01/23 - Modified for WOL when system is in OFF state
-fec_poweroff(struct device *dev)
-{
-	unsigned short val, phy_id;	
-
-	struct net_device *ndev = dev_get_drvdata(dev);
-	struct fec_enet_private *fep = netdev_priv(ndev);
-
-	// Read Interrupt Status register to clear WOL event
-	val = phy_read(fep->phy_dev, 0x13);
-
-	phy_id = phy_read(fep->phy_dev, 0x03);
-	val = phy_read(fep->phy_dev, 0x12);
-	val |= 0x01;	
-	phy_write(fep->phy_dev, 0x12, val);
-	printk("enable WOL, PHY_ID=%x, val=%x\n", phy_id, val);
-	
-	return 0;
-}
-// <- End.
-
 static int
 fec_resume(struct device *dev)
 {
@@ -2103,10 +2082,7 @@ static const struct dev_pm_ops fec_pm_ops = {
 	.resume		= fec_resume,
 	.freeze		= fec_suspend,
 	.thaw		= fec_resume,
-	// -> [J.Chiang], 2014/01/23 - Modified for WOL when system is in OFF state
-	//.poweroff	= fec_suspend,
-	.poweroff	= fec_poweroff,
-	// <- End.
+	.poweroff	= fec_suspend,
 	.restore	= fec_resume,
 };
 #endif

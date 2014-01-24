@@ -39,6 +39,37 @@ MODULE_DESCRIPTION("PHY library");
 MODULE_AUTHOR("Andy Fleming");
 MODULE_LICENSE("GPL");
 
+// -> [Walker Chen], 2014/01/24 - added for WOL function
+static struct phy_device *PHY_DEV;
+
+int phy_wol_enable( void )
+{
+	struct phy_device *phydev = PHY_DEV;
+	unsigned short val, phy_id;
+
+	if( phydev != NULL ){
+		// Read Interrupt Status register to clear WOL event
+		mutex_lock(&phydev->lock);
+
+		val = phy_read( phydev, 0x13 );
+
+		phy_id = phy_read( phydev, 0x03 );
+		
+		val = phy_read( phydev, 0x12 );
+		val |= 0x01;
+		phy_write( phydev, 0x12 , val );
+		printk("enable WOL, PHY_ID=%x, val=%x\n", phy_id, val);
+
+		val = phy_read(phydev, MII_BMCR);
+		phy_write(phydev, MII_BMCR, (val | BMCR_ISOLATE));
+
+		mutex_unlock(&phydev->lock);
+	}
+	return 0;
+}
+EXPORT_SYMBOL(phy_wol_enable);
+// <- End.
+
 void phy_device_free(struct phy_device *phydev)
 {
 	kfree(phydev);
@@ -905,7 +936,6 @@ int genphy_suspend(struct phy_device *phydev)
 	//phy_write(phydev, MII_BMCR, (value | BMCR_PDOWN));
 	phy_write(phydev, MII_BMCR, (value | BMCR_ISOLATE));
 	
-
 	mutex_unlock(&phydev->lock);
 
 	return 0;
@@ -957,12 +987,16 @@ static int phy_probe(struct device *dev)
 	int err = 0;
 
 	phydev = to_phy_device(dev);
-
+	
 	/* Make sure the driver is held.
 	 * XXX -- Is this correct? */
 	drv = get_driver(phydev->dev.driver);
 	phydrv = to_phy_driver(drv);
 	phydev->drv = phydrv;
+	
+	// -> [Walker Chen], 2014/1/24 - added for wol funnction
+	PHY_DEV = phydev;
+	// <- End.
 
 	/* Disable the interrupt if the PHY doesn't support it */
 	if (!(phydrv->flags & PHY_HAS_INTERRUPT))
