@@ -107,14 +107,14 @@ static u8 g_edid[2][512];
 
 static struct fb_videomode ldb_modedb[] = {
 	// -> [Walker Chen], 2014/01/09 - change WXGA to 1366x768
-	//{
-	// "LDB-WXGA", 60, 1280, 800, 14065,
-	// 40, 40,
-	// 10, 3,
-	// 80, 10,
-	// 0,
-	// FB_VMODE_NONINTERLACED,
-	// FB_MODE_IS_DETAILED,},
+	{
+	 "VIC-WXGA", 60, 1280, 800, 14065,
+	 105, 23,
+	 35, 6,
+	 15, 5,
+	 0,
+	 FB_VMODE_NONINTERLACED,
+	 FB_MODE_IS_DETAILED,},
 	{
 	 "LDB-WXGA", 50, 1366, 768, 13255, // pixel clock 76Mhz => 1/76MHz = 13158pSec
 	 64, 32,  // 194
@@ -133,9 +133,9 @@ static struct fb_videomode ldb_modedb[] = {
 	// FB_MODE_IS_DETAILED,}, 
 	{
 	 "LDB-WVGA", 60, 1024, 600, 21067,
-	 180, 18,
+	 175, 13,
 	 25, 3,
-	 18, 8,
+	 28, 8,
 	 0,
 	 FB_VMODE_NONINTERLACED,
 	 FB_MODE_IS_DETAILED,},
