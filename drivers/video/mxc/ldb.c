@@ -116,10 +116,10 @@ static struct fb_videomode ldb_modedb[] = {
 	// FB_VMODE_NONINTERLACED,
 	// FB_MODE_IS_DETAILED,},
 	{
-	 "LDB-WXGA", 60, 1366, 768, 13158, // pixel clock 76Mhz => 1/76MHz = 13158pSec 
-	 190, 10,  // 194
-	 30, 8,   // 38
-	 65, 12,
+	 "LDB-WXGA", 50, 1366, 768, 13255, // pixel clock 76Mhz => 1/76MHz = 13158pSec
+	 64, 32,  // 194
+	 12, 6,   // 38
+	 98, 20,
 	 0,
 	 FB_VMODE_NONINTERLACED,
 	 FB_MODE_IS_DETAILED,},
@@ -133,9 +133,9 @@ static struct fb_videomode ldb_modedb[] = {
 	// FB_MODE_IS_DETAILED,}, 
 	{
 	 "LDB-WVGA", 60, 1024, 600, 21067,
-	 170, 7,
-	 24, 7,
-	 80, 8,
+	 180, 18,
+	 25, 3,
+	 18, 8,
 	 0,
 	 FB_VMODE_NONINTERLACED,
 	 FB_MODE_IS_DETAILED,},
