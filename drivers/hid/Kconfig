@@ -344,6 +344,7 @@ config HID_MULTITOUCH
 	  - Stantum multitouch panels
 	  - Touch International Panels
 	  - Unitec Panels
+	  - Xiroku optical touch panels
 
 	  If unsure, say N.
 
