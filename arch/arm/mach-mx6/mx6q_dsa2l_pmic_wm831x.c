@@ -37,6 +37,7 @@ extern u32 enable_ldo_mode;
 
 // -> [Walker Chen], 2013/12/18  - added pmic irq
 #define DSA2L_PMIC_INT IMX_GPIO_NR(7, 11)
+#define DSA2L_VGA_CABLE_IN	IMX_GPIO_NR(7, 7)
 // <- End.
 
 #ifdef CONFIG_MX6_INTER_LDO_BYPASS
@@ -271,6 +272,7 @@ static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 	{
 	I2C_BOARD_INFO("ch7036", 0x76),
 	//.platform_data = &dsa2l_ch7036_pdata,
+	.irq = gpio_to_irq( DSA2L_VGA_CABLE_IN ),
 	},
 };
 
