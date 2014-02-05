@@ -142,7 +142,7 @@ static struct fb_videomode ldb_modedb[] = {
 	 // <- End.
 	{
 	 "LDB-XGA", 60, 1024, 768, 15385,
-	 190, 10,
+	 240, 40,
 	 21, 7,
 	 60, 10,
 	 0,
