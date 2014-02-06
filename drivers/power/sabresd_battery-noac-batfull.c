@@ -156,7 +156,7 @@ u32 calibrate_battery_capability_percent(struct max8903_data *data)
 {
 // -> [J.Chiang], 2014/01/08 - Modified for DSA2L, the project does not have battery, reture 100% always.
 #ifdef	CONFIG_DSA2L
-	return 90;
+	return 100;
 #else	// CONFIG_DSA2L
     u8 i;
     pbattery_capacity pTable;
@@ -198,9 +198,9 @@ extern u32 max11801_read_adc(void);
 static void max8903_charger_update_status(struct max8903_data *data)
 {
 #ifdef	CONFIG_DSA2L
-	data->battery_status = POWER_SUPPLY_STATUS_CHARGING;
-	// DC-IN only
-	data->charger_online = 1;
+	data->battery_status = POWER_SUPPLY_STATUS_FULL;
+	// no DC-IN and USB charger
+	data->charger_online = 0;
 	data->usb_charger_online = 0;
 #else	// CONFIG_DSA2L
 	if (data->usb_in || data->ta_in) {
@@ -356,8 +356,8 @@ static int max8903_battery_get_property(struct power_supply *bat,
 	switch (psp) {
 	case POWER_SUPPLY_PROP_STATUS:
 #ifdef	CONFIG_DSA2L
-		// Always in charging
-		di->battery_status = POWER_SUPPLY_STATUS_CHARGING;
+		// Always 100%, so status is not charging
+		di->battery_status = POWER_SUPPLY_STATUS_NOT_CHARGING;
 #else	// CONFIG_DSA2L
 		val->intval = POWER_SUPPLY_STATUS_UNKNOWN;
 			if (gpio_get_value(di->pdata->chg) == 0) {
@@ -406,7 +406,7 @@ static int max8903_battery_get_property(struct power_supply *bat,
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY:
 #ifdef	CONFIG_DSA2L
-		val->intval = 90;
+		val->intval = 100;
 #else	// CONFIG_DSA2L
 		val->intval = di->percent < 0 ? 0 :
 				(di->percent > 100 ? 100 : di->percent);
@@ -421,7 +421,7 @@ static int max8903_battery_get_property(struct power_supply *bat,
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY_LEVEL:
 #ifdef	CONFIG_DSA2L
-		val->intval = POWER_SUPPLY_CAPACITY_LEVEL_NORMAL;
+		val->intval = POWER_SUPPLY_CAPACITY_LEVEL_FULL;
 #else	// CONFIG_DSA2L
 		if (di->battery_status == POWER_SUPPLY_STATUS_FULL)
 			val->intval = POWER_SUPPLY_CAPACITY_LEVEL_FULL;
@@ -447,8 +447,8 @@ static int max8903_get_property(struct power_supply *psy,
 	switch (psp) {
 	case POWER_SUPPLY_PROP_ONLINE:
 #ifdef	CONFIG_DSA2L
-		// Always on-line, or system will enter suspend.
-		val->intval = 1;		
+		// Always off-line, or system won't enter suspend.
+		val->intval = 0;		
 #else	// CONFIG_DSA2L
 		val->intval = 0;
 		if (data->ta_in)
