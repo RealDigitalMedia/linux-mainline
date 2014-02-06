@@ -40,6 +40,8 @@
 #include <linux/ipu.h>
 #include <linux/fsl_devices.h>
 #include <mach/hardware.h>
+#include <linux/gpio.h>
+#include <linux/kthread.h>
 
 static struct i2c_client *ch7036_client;
 
@@ -55,11 +57,68 @@ static struct regulator *analog_reg;
 // -> [Walker Chen], 2014/1/13 - added ch7036 VGA power enable/disable
 void inline ch7036_VGA_enable( unsigned int en ){
 	if( en ){
-		i2c_smbus_write_byte_data(ch7036_client, 0x08, 0x01 ); //R1_08h value[3:1]=PDDAC[2:0]=on			
+		i2c_smbus_write_byte_data(ch7036_client, 0x08, 0x01 ); //R1_08h value[3:1]=PDDAC[2:0]=on
 	}else{
 		i2c_smbus_write_byte_data(ch7036_client, 0x08, 0x0f ); //R1_08h value[3:1]=PDDAC[2:0]=off
 	}
 }
+// <- End.
+
+
+// -> [Walker Chen], 2014/01/29 - VGA reboot
+static DECLARE_WAIT_QUEUE_HEAD(wq);
+static volatile int showtime = 0;
+static int vga_gpio;
+
+void vga_reboot(void) {
+    int ret;
+    char *argv[2], *envp[4];
+
+    argv[0] = "/system/bin/reboot";
+    argv[1] = NULL;
+    envp[0] = "HOME=/";
+    envp[1] = "PWD=/";
+    envp[2] = "PATH=/system/bin";
+    envp[3] = NULL;
+    ret = call_usermodehelper(argv[0], argv, envp, 0);
+    printk(KERN_INFO "VGA reboot (ret = %d)\n", ret);
+}
+
+static int vga_reboot_thread(void *arg) {
+	int i;
+    wait_event(wq, showtime);
+ 	
+ 	/*  software gpio debounce */
+ 	for( i = 0; i < 20 ; i++ ){
+ 		msleep(100);
+ 		//printk("i=%d\n" , i ); 		
+ 		if( gpio_get_value( vga_gpio ) == 1 ) // high is fail, low active
+ 		{
+ 			//printk("reboot abort~\n" );
+ 			showtime = 0;
+ 			kthread_run(vga_reboot_thread, NULL, "VGA reboot");
+ 			return 0;
+ 		}
+	}
+    //printk("do reboot action\n" );	
+    vga_reboot();
+    return 0;
+}
+
+static irqreturn_t
+vga_reboot_interrupt(int irq, void *dev_id)
+{
+	int vga_in = gpio_get_value( vga_gpio );
+	printk("%s:vga_in=%d:showtime=%d\n", __func__ , vga_in , showtime );
+	
+	if( vga_in==0 && (showtime == 0) )
+	{
+    	showtime = 1;
+    	wake_up(&wq);
+	}
+    return IRQ_HANDLED;	
+}
+
 // <- End.
 
 //	/* 8 800x600-60 VESA */
@@ -97,13 +156,23 @@ static int lcd_fb_event(struct notifier_block *nb, unsigned long val, void *v)
 	switch (val) {
 	case FB_EVENT_FB_REGISTERED:
 		//lcd_init_fb(event->info);
-		lcd_poweron(event->info);
+		//lcd_poweron(event->info);
+		ch7036_VGA_enable(1);
+		//printk("%s:FB_EVENT_FB_REGISTERED\n" ,__func__);
 		break;
 	case FB_EVENT_BLANK:
 		if (*((int *)event->data) == FB_BLANK_UNBLANK)
-			lcd_poweron(event->info);
+		{
+			//lcd_poweron(event->info);
+			//printk("%s:FB_EVENT_UNBLANK\n" ,__func__);
+			ch7036_VGA_enable(1);
+		}
 		else
-			lcd_poweroff();
+		{
+			//lcd_poweroff();
+			//printk("%s:FB_EVENT_BLANK\n" ,__func__);
+			ch7036_VGA_enable(0);
+		}
 		break;
 	}
 	return 0;
@@ -126,36 +195,6 @@ static int __devinit lcd_probe(struct device *dev)
 	int i;
 	struct mxc_lcd_platform_data *plat = dev->platform_data;
 
-	//if (plat) {
-    //
-	//	io_reg = regulator_get(dev, plat->io_reg);
-	//	if (!IS_ERR(io_reg)) {
-	//		regulator_set_voltage(io_reg, 1800000, 1800000);
-	//		regulator_enable(io_reg);
-	//	} else {
-	//		io_reg = NULL;
-	//	}
-    //
-	//	core_reg = regulator_get(dev, plat->core_reg);
-	//	if (!IS_ERR(core_reg)) {
-	//		regulator_set_voltage(core_reg, 2500000, 2500000);
-	//		regulator_enable(core_reg);
-	//	} else {
-	//		core_reg = NULL;
-	//	}
-	//	analog_reg = regulator_get(dev, plat->analog_reg);
-	//	if (!IS_ERR(analog_reg)) {
-	//		regulator_set_voltage(analog_reg, 2775000, 2775000);
-	//		regulator_enable(analog_reg);
-	//	} else {
-	//		analog_reg = NULL;
-	//	}
-	//	msleep(100);
-    //
-	//	lcd_reset = plat->reset;
-	//	if (lcd_reset)
-	//		lcd_reset();
-	//}
 	ch7036_VGA_enable(1);
 
 	for (i = 0; i < num_registered_fb; i++) {
@@ -163,23 +202,28 @@ static int __devinit lcd_probe(struct device *dev)
 			ret = lcd_init();
 			if (ret < 0)
 				goto err;
-
 			//lcd_init_fb(registered_fb[i]);
 			fb_show_logo(registered_fb[i], 0);
-			lcd_poweron(registered_fb[i]);
+			//lcd_poweron(registered_fb[i]);
 		}
 	}
 
 	fb_register_client(&nb);
+	
+	// -> [Walker Chen], 2014/01/29 - VGA reboot
+	kthread_run(vga_reboot_thread, NULL, "VGA reboot");
+
+	vga_gpio = irq_to_gpio(ch7036_client->irq);
+	gpio_set_debounce( vga_gpio , 1000 ); //1000ms	
+	irq_set_irq_wake( ch7036_client->irq , 1 );
+	ret = request_irq(ch7036_client->irq, vga_reboot_interrupt,
+			IRQF_TRIGGER_FALLING,
+			 "ch7036 VGA_in", ch7036_client);
+	enable_irq_wake(ch7036_client->irq);
+	// <- End.
+	
 	return 0;
 err:
-	//if (io_reg)
-	//	regulator_disable(io_reg);
-	//if (core_reg)
-	//	regulator_disable(core_reg);
-	//if (analog_reg)
-	//	regulator_disable(analog_reg);
-
 	return ret;
 }
 
@@ -194,7 +238,7 @@ static int __devinit ch7036_probe(struct i2c_client *client,
 static int __devexit ch7036_remove(struct i2c_client *client)
 {
 	fb_unregister_client(&nb);
-	lcd_poweroff();
+	//lcd_poweroff();
 	ch7036_VGA_enable(0);
 	//regulator_put(io_reg);
 	//regulator_put(core_reg);
