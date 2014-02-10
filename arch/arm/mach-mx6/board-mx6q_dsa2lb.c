@@ -85,34 +85,36 @@
 #include "board-mx6dl_sabresd.h"
 #include <mach/imx_rfkill.h>
 
-#define DSA2LB_VGA_RST			IMX_GPIO_NR(1, 1)
 #define SABRESD_MICROPHONE_DET	IMX_GPIO_NR(1, 9)
-#define DSA2LB_PMIC_GPIO_RST		IMX_GPIO_NR(1, 5)
-#define DSA2LB_BOARD_ID0			IMX_GPIO_NR(1, 17)
-#define DSA2LB_BOARD_ID1			IMX_GPIO_NR(1, 19)
-#define DSA2LB_BOARD_ID2			IMX_GPIO_NR(1, 21)
+#define DSA2LB_PMIC_GPIO_RST	IMX_GPIO_NR(1, 5)
+#define DSA2LB_BOARD_ID0		IMX_GPIO_NR(1, 18)
+#define DSA2LB_BOARD_ID1		IMX_GPIO_NR(1, 20)
+#define DSA2LB_BOARD_ID2		IMX_GPIO_NR(1, 16)
 #define SABRESD_RGMII_RST		IMX_GPIO_NR(1, 25)
 #define SABRESD_RGMII_INT		IMX_GPIO_NR(1, 26)
-#define DSA2LB_EMMC_RST			IMX_GPIO_NR(1, 29)
 #define DSA2LB_RTC_INT			IMX_GPIO_NR(1, 30)
 
-#define SABRESD_SD2_CD		IMX_GPIO_NR(2, 2)
-#define SABRESD_SD2_WP		IMX_GPIO_NR(2, 3)
+#define SABRESD_SD2_CD			IMX_GPIO_NR(2, 2)
+#define SABRESD_SD2_WP			IMX_GPIO_NR(2, 3)
 
 #define SABRESD_ECSPI1_CS0		IMX_GPIO_NR(4, 9)
 #define SABRESD_CODEC_PWR_EN	IMX_GPIO_NR(4, 10) //NC
-#define DSA2LB_BTN_RESET			IMX_GPIO_NR(4, 15)
+#define DSA2LB_BTN_RESET		IMX_GPIO_NR(4, 15)
 
 #define SABRESD_HEADPHONE_DET	IMX_GPIO_NR(7, 8)
 #define DSA2LB_PMIC_INT			IMX_GPIO_NR(7, 11)
-#define DSA2LB_LED_R				IMX_GPIO_NR(7, 3)
-#define DSA2LB_LED_B				IMX_GPIO_NR(7, 2)
+#define DSA2LB_LED_R			IMX_GPIO_NR(7, 3)
+#define DSA2LB_LED_G			IMX_GPIO_NR(7, 2)
 #define DSA2LB_WIFI_DISABLE		IMX_GPIO_NR(7, 4)
 #define DSA2LB_USB_OTG_PWR_IN	IMX_GPIO_NR(7, 5)
-#define DSA2LB_VGA_PWR_EN		IMX_GPIO_NR(7, 6)
-#define DSA2LB_VGA_CABLE_IN		IMX_GPIO_NR(7, 7)
-#define DSA2LB_BTN_POWER			IMX_GPIO_NR(7, 13)
+#define DSA2LB_BTN_POWER		IMX_GPIO_NR(7, 13)
 #define DSA2LB_WOL_IRQ			IMX_GPIO_NR(1, 28)
+#define DSA2LB_BACKLIGHT_EN		IMX_GPIO_NR(1, 7)
+
+#define DSA2LB_LVDS_RES_0		IMX_GPIO_NR(1, 1)
+#define DSA2LB_LVDS_RES_1		IMX_GPIO_NR(1, 2)
+#define DSA2LB_LVDS_RES_2		IMX_GPIO_NR(1, 4)
+#define DSA2LB_LVDS_MODE		IMX_GPIO_NR(1, 8)
 
 #ifdef CONFIG_MX6_ENET_IRQ_TO_GPIO
 #define MX6_ENET_IRQ		IMX_GPIO_NR(1, 6)
@@ -684,8 +686,8 @@ static struct gpio_led imx6q_gpio_leds[] = {
 		.default_state		= 0,
 	},
 	{
-		.gpio			= DSA2LB_LED_B,
-		.name			= "blue_led",
+		.gpio			= DSA2LB_LED_G,
+		.name			= "green_led",
 		.active_low		= 0,
 		.retain_state_suspended = 1,
 		.default_state		= 1,
@@ -962,22 +964,16 @@ static inline void dsa2lb_init(void)
 	gpio_direction_input( DSA2LB_PMIC_INT );
 	gpio_free( DSA2LB_PMIC_INT );
 
-	// EMMC
-	gpio_request( DSA2LB_EMMC_RST , "EMMC_RST" );
-	gpio_direction_output( DSA2LB_EMMC_RST , 1 );
-	gpio_set_value( DSA2LB_EMMC_RST , 1 );
-	gpio_free( DSA2LB_EMMC_RST);
-
 	// LEDs
 	gpio_request( DSA2LB_LED_R , "LED_R" );
 	gpio_direction_output( DSA2LB_LED_R , 1 );
 	gpio_set_value( DSA2LB_LED_R , 0 );
 	gpio_free( DSA2LB_LED_R );
 
-	gpio_request( DSA2LB_LED_B , "LED_B" );
-	gpio_direction_output( DSA2LB_LED_B , 1 );
-	gpio_set_value( DSA2LB_LED_B , 1 );
-	gpio_free( DSA2LB_LED_B );
+	gpio_request( DSA2LB_LED_G , "LED_G" );
+	gpio_direction_output( DSA2LB_LED_G , 1 );
+	gpio_set_value( DSA2LB_LED_G , 1 );
+	gpio_free( DSA2LB_LED_G );
 
 	// WIFI disable
 	gpio_request( DSA2LB_WIFI_DISABLE , "WIFI_DISABLE" );
@@ -989,23 +985,6 @@ static inline void dsa2lb_init(void)
 	gpio_request( DSA2LB_USB_OTG_PWR_IN , "USB_OTG_PWR_IN" );
 	gpio_direction_input( DSA2LB_USB_OTG_PWR_IN );
 	gpio_free( DSA2LB_USB_OTG_PWR_IN );
-
-	// VGA
-	gpio_request( DSA2LB_VGA_RST , "VGA_RST" );
-	gpio_direction_output( DSA2LB_VGA_RST , 1 );
-	//gpio_set_value( DSA2LB_VGA_RST , 0 );
-	//msleep(50);//50ms
-	gpio_set_value( DSA2LB_VGA_RST , 1 );
-	gpio_free( DSA2LB_VGA_RST );
-
-	gpio_request( DSA2LB_VGA_PWR_EN , "VGA_PWR_EN" );
-	gpio_direction_output( DSA2LB_VGA_PWR_EN , 1 );
-	gpio_set_value( DSA2LB_VGA_PWR_EN , 1 );
-	gpio_free( DSA2LB_VGA_PWR_EN );
-
-	gpio_request( DSA2LB_VGA_CABLE_IN , "VGA_CABLE_IN" );
-	gpio_direction_input( DSA2LB_VGA_CABLE_IN );
-	gpio_free( DSA2LB_VGA_CABLE_IN );
 
 	// board-id
 	gpio_request( DSA2LB_BOARD_ID0 , "BOARD_ID0" );
@@ -1033,6 +1012,30 @@ static inline void dsa2lb_init(void)
 	gpio_request( DSA2LB_BTN_POWER , "BTN_POWER" );
 	gpio_direction_input( DSA2LB_BTN_POWER );
 	gpio_free( DSA2LB_BTN_POWER );
+	
+	// Backlight
+	gpio_request( DSA2LB_BACKLIGHT_EN , "DSA2LB_BACKLIGHT_EN" );
+	gpio_direction_output( DSA2LB_BACKLIGHT_EN , 1 );
+	gpio_set_value( DSA2LB_BACKLIGHT_EN , 1 );
+	gpio_free( DSA2LB_BACKLIGHT_EN );	
+	
+	// LVDS mode
+	gpio_request( DSA2LB_LVDS_RES_0 , "DSA2LB_LVDS_RES_0" );
+	gpio_direction_input( DSA2LB_LVDS_RES_0 );
+	gpio_free( DSA2LB_LVDS_RES_0 );
+
+	gpio_request( DSA2LB_LVDS_RES_1 , "DSA2LB_LVDS_RES_1" );
+	gpio_direction_input( DSA2LB_LVDS_RES_1 );
+	gpio_free( DSA2LB_LVDS_RES_1 );
+	
+	gpio_request( DSA2LB_LVDS_RES_2 , "DSA2LB_LVDS_RES_2" );
+	gpio_direction_input( DSA2LB_LVDS_RES_2 );
+	gpio_free( DSA2LB_LVDS_RES_2 );
+
+	gpio_request( DSA2LB_LVDS_MODE , "DSA2LB_LVDS_MODE" );
+	gpio_direction_input( DSA2LB_LVDS_MODE );
+	gpio_free( DSA2LB_LVDS_MODE );
+
 }
 // <- End.
 
