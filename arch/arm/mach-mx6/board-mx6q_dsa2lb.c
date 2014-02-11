@@ -104,7 +104,7 @@
 #define SABRESD_HEADPHONE_DET	IMX_GPIO_NR(7, 8)
 #define DSA2LB_PMIC_INT			IMX_GPIO_NR(7, 11)
 #define DSA2LB_LED_R			IMX_GPIO_NR(7, 3)
-#define DSA2LB_LED_G			IMX_GPIO_NR(7, 2)
+#define DSA2LB_LED_B			IMX_GPIO_NR(7, 2)
 #define DSA2LB_WIFI_DISABLE		IMX_GPIO_NR(7, 4)
 #define DSA2LB_USB_OTG_PWR_IN	IMX_GPIO_NR(7, 5)
 #define DSA2LB_BTN_POWER		IMX_GPIO_NR(7, 13)
@@ -556,7 +556,7 @@ static struct fsl_mxc_ldb_platform_data ldb_data = {
 	.disp_id = 1,
 	.ext_ref = 1,
 	//.mode = LDB_SEP1,
-	.mode = LDB_DUL_DI1, // [Walker Chen], bouth lvds chennal used DISP1
+	.mode = LDB_SPL_DI0, // [Walker Chen],  dual channel used LDB_SPL_DI0
 	.sec_ipu_id = 0,
 	.sec_disp_id = 0,
 };
@@ -686,8 +686,8 @@ static struct gpio_led imx6q_gpio_leds[] = {
 		.default_state		= 0,
 	},
 	{
-		.gpio			= DSA2LB_LED_G,
-		.name			= "green_led",
+		.gpio			= DSA2LB_LED_B,
+		.name			= "blue_led",
 		.active_low		= 0,
 		.retain_state_suspended = 1,
 		.default_state		= 1,
@@ -970,10 +970,10 @@ static inline void dsa2lb_init(void)
 	gpio_set_value( DSA2LB_LED_R , 0 );
 	gpio_free( DSA2LB_LED_R );
 
-	gpio_request( DSA2LB_LED_G , "LED_G" );
-	gpio_direction_output( DSA2LB_LED_G , 1 );
-	gpio_set_value( DSA2LB_LED_G , 1 );
-	gpio_free( DSA2LB_LED_G );
+	gpio_request( DSA2LB_LED_B , "LED_B" );
+	gpio_direction_output( DSA2LB_LED_B , 1 );
+	gpio_set_value( DSA2LB_LED_B , 1 );
+	gpio_free( DSA2LB_LED_B );
 
 	// WIFI disable
 	gpio_request( DSA2LB_WIFI_DISABLE , "WIFI_DISABLE" );
@@ -1159,7 +1159,7 @@ static void __init mx6_sabresd_board_init(void)
 	/* Move sd4 to first because sd4 connect to emmc.
 	   Mfgtools want emmc is mmcblk0 and other sd card is mmcblk1.
 	*/
-	imx6q_add_sdhci_usdhc_imx(3, &mx6q_sabresd_sd4_data);
+	//imx6q_add_sdhci_usdhc_imx(3, &mx6q_sabresd_sd4_data);
 	//imx6q_add_sdhci_usdhc_imx(2, &mx6q_sabresd_sd3_data);
 	imx6q_add_sdhci_usdhc_imx(1, &mx6q_sabresd_sd2_data);
 	imx_add_viv_gpu(&imx6_gpu_data, &imx6q_gpu_pdata);
