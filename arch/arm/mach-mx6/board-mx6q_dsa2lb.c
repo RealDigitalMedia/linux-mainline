@@ -470,9 +470,9 @@ static struct imx_asrc_platform_data imx_asrc_data = {
 static struct ipuv3_fb_platform_data sabresd_fb_data[] = {
 	{ /*fb0*/
 	.disp_dev = "ldb",
-	.interface_pix_fmt = IPU_PIX_FMT_RGB666,
-	.mode_str = "LDB-XGA",
-	.default_bpp = 16,
+	.interface_pix_fmt = IPU_PIX_FMT_RGB24,
+	.mode_str = "LDB-1080P60",
+	.default_bpp = 32,
 	.int_clk = false,
 	.late_init = false,
 	}, {

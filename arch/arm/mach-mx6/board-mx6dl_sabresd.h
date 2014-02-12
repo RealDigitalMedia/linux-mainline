@@ -240,10 +240,6 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	MX6DL_PAD_GPIO_3__I2C3_SCL,
 	MX6DL_PAD_GPIO_6__I2C3_SDA,
 
-	/* I2C4 */
-	MX6DL_PAD_GPIO_7__I2C4_SCL,
-	MX6DL_PAD_GPIO_8__I2C4_SDA,
-
 	/* UART1 for debug */
 	MX6DL_PAD_SD3_DAT6__UART1_RXD,
 	MX6DL_PAD_SD3_DAT7__UART1_TXD,
