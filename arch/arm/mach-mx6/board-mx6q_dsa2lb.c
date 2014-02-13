@@ -116,6 +116,9 @@
 #define DSA2LB_LVDS_RES_2		IMX_GPIO_NR(1, 4)
 #define DSA2LB_LVDS_MODE		IMX_GPIO_NR(1, 8)
 
+#define DSA2LB_AMP_MUTE			IMX_GPIO_NR(4, 5)
+#define DSA2LB_AMP_SHUTDOWNn	IMX_GPIO_NR(7, 12)
+
 #ifdef CONFIG_MX6_ENET_IRQ_TO_GPIO
 #define MX6_ENET_IRQ		IMX_GPIO_NR(1, 6)
 #define IOMUX_OBSRV_MUX1_OFFSET	0x3c
@@ -1035,6 +1038,17 @@ static inline void dsa2lb_init(void)
 	gpio_request( DSA2LB_LVDS_MODE , "DSA2LB_LVDS_MODE" );
 	gpio_direction_input( DSA2LB_LVDS_MODE );
 	gpio_free( DSA2LB_LVDS_MODE );
+
+	// audio amp
+	gpio_request( DSA2LB_AMP_MUTE , "DSA2LB_AMP_MUTE" );
+	gpio_direction_output( DSA2LB_AMP_MUTE , 1 );
+	gpio_set_value( DSA2LB_AMP_MUTE , 0 );
+	gpio_free( DSA2LB_AMP_MUTE );
+
+	gpio_request( DSA2LB_AMP_SHUTDOWNn , "DSA2LB_AMP_SHUTDOWNn" );
+	gpio_direction_output( DSA2LB_AMP_SHUTDOWNn , 1 );
+	gpio_set_value( DSA2LB_AMP_SHUTDOWNn , 1 );
+	gpio_free( DSA2LB_AMP_SHUTDOWNn );
 
 }
 // <- End.

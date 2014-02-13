@@ -307,9 +307,6 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	MX6DL_PAD_EIM_DA9__GPIO_3_9,
 	/* BARO_INT */
 	MX6DL_PAD_EIM_DA15__GPIO_3_15,
-
-	/* SPDIF OUT */
-	MX6DL_PAD_GPIO_17__SPDIF_OUT1,
 	
 	/* Charge */
 	MX6DL_PAD_EIM_DA13__GPIO_3_13, /* CHG_2_B  */
@@ -355,7 +352,11 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	MX6DL_PAD_GPIO_1__GPIO_1_1,	/* LVDS_RESOLUTION0 */
 	MX6DL_PAD_GPIO_2__GPIO_1_2,	/* LVDS_RESOLUTION1 */
 	MX6DL_PAD_GPIO_4__GPIO_1_4,	/* LVDS_RESOLUTION2 */
-	MX6DL_PAD_GPIO_8__GPIO_1_8,	/* LVDS_MODE */		
+	MX6DL_PAD_GPIO_8__GPIO_1_8,	/* LVDS_MODE */
+	
+	/* audio amp */
+	MX6DL_PAD_GPIO_19__GPIO_4_5,	/* amp_mute */
+	MX6DL_PAD_GPIO_17__GPIO_7_12,	/* amp_shutdown */
 	
 };
 #endif	CONFIG_DSA2LB
