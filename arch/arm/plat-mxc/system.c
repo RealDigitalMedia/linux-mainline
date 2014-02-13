@@ -46,6 +46,8 @@ static void arch_reset_special_mode(char mode, const char *cmd)
 		do_switch_recovery();
 	else if (strcmp(cmd, "fastboot") == 0)
 		do_switch_fastboot();
+	else if (strcmp(cmd, "mac") == 0)
+		do_program_mac();
 }
 
 /*

@@ -578,6 +578,7 @@ void mxc_clear_mfgmode(void)
 
 #define ANDROID_RECOVERY_BOOT  (1 << 7)
 #define ANDROID_FASTBOOT_BOOT  (1 << 8)
+#define ANDROID_PROGRAM_MAC		(1 << 9)
 
 void do_switch_recovery(void)
 {
@@ -594,6 +595,15 @@ void do_switch_fastboot(void)
 
 	reg = __raw_readl(MX6Q_SNVS_BASE_ADDR + SNVS_LPGPR);
 	reg |= ANDROID_FASTBOOT_BOOT;
+	__raw_writel(reg, MX6Q_SNVS_BASE_ADDR + SNVS_LPGPR);
+}
+
+void do_program_mac(void)
+{
+	u32 reg;
+
+	reg = __raw_readl(MX6Q_SNVS_BASE_ADDR + SNVS_LPGPR);
+	reg |= ANDROID_PROGRAM_MAC;
 	__raw_writel(reg, MX6Q_SNVS_BASE_ADDR + SNVS_LPGPR);
 }
 #endif

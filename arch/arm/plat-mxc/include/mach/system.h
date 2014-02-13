@@ -40,6 +40,7 @@ void mxc_clear_mfgmode(void);
 #ifdef CONFIG_MXC_REBOOT_ANDROID_CMD
 void do_switch_recovery(void);
 void do_switch_fastboot(void);
+void do_program_mac(void);
 #else
 #define do_switch_recovery() do {} while (0)
 #define do_switch_fastboot() do {} while (0)
