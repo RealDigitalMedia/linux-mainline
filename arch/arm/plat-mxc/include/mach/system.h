@@ -44,6 +44,7 @@ void do_program_mac(void);
 #else
 #define do_switch_recovery() do {} while (0)
 #define do_switch_fastboot() do {} while (0)
+#define do_program_mac() do {} while (0)
 #endif
 
 #endif /* __ASM_ARCH_MXC_SYSTEM_H__ */
