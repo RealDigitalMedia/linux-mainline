@@ -191,7 +191,7 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	/* phy WOL */
 	MX6DL_PAD_ENET_TX_EN__GPIO_1_28,
 };
-#endif	CONFIG_DSA2L
+#endif	// CONFIG_DSA2L
 
 #ifdef	CONFIG_DSA2LB
 static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
@@ -359,7 +359,7 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	MX6DL_PAD_GPIO_17__GPIO_7_12,	/* amp_shutdown */
 	
 };
-#endif	CONFIG_DSA2LB
+#endif	// CONFIG_DSA2LB
 
 static iomux_v3_cfg_t mx6dl_sabresd_csi0_sensor_pads[] = {
 	/* IPU1 Camera */
