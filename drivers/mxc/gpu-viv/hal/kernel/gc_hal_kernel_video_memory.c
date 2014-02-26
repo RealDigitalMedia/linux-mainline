@@ -1,6 +1,6 @@
 /****************************************************************************
 *
-*    Copyright (C) 2005 - 2012 by Vivante Corp.
+*    Copyright (C) 2005 - 2013 by Vivante Corp.
 *
 *    This program is free software; you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -17,8 +17,6 @@
 *    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 *
 *****************************************************************************/
-
-
 
 
 #include "gc_hal_kernel_precomp.h"
@@ -1029,7 +1027,8 @@ gckVIDMEM_AllocateLinear(
     )
     {
         /* The left memory is for small memory.*/
-        gcmkONERROR(gcvSTATUS_OUT_OF_MEMORY);
+        status = gcvSTATUS_OUT_OF_MEMORY;
+        goto OnError;
     }
 #endif
 
@@ -1583,6 +1582,7 @@ _NeedVirtualMapping(
     gctUINT32 end;
     gcePOOL pool;
     gctUINT32 offset;
+    gctUINT32 baseAddress;
 
     gcmkHEADER_ARG("Node=0x%X", Node);
 
@@ -1602,10 +1602,16 @@ _NeedVirtualMapping(
         else
 #endif
         {
-            /* For cores which can't access all physical address. */
-            gcmkONERROR(gckHARDWARE_ConvertLogical(Kernel->hardware,
-                        Node->Virtual.logical,
-                        &phys));
+            /* Convert logical address into a physical address. */
+            gcmkONERROR(
+                gckOS_GetPhysicalAddress(Kernel->os, Node->Virtual.logical, &phys));
+
+            gcmkONERROR(gckOS_GetBaseAddress(Kernel->os, &baseAddress));
+
+            gcmkASSERT(phys >= baseAddress);
+
+            /* Subtract baseAddress to get a GPU address used for programming. */
+            phys -= baseAddress;
 
             /* If part of region is belong to gcvPOOL_VIRTUAL,
             ** whole region has to be mapped. */

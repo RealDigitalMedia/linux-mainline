@@ -12,10 +12,21 @@ obj-$(CONFIG_MACH_MX6Q_ARM2) += board-mx6q_arm2.o
 obj-$(CONFIG_MACH_MX6SL_ARM2) += board-mx6sl_arm2.o mx6sl_arm2_pmic_pfuze100.o
 obj-$(CONFIG_MACH_MX6SL_EVK) += board-mx6sl_evk.o mx6sl_evk_pmic_pfuze100.o
 obj-$(CONFIG_MACH_MX6Q_SABRELITE) += board-mx6q_sabrelite.o
-obj-$(CONFIG_MACH_MX6Q_SABRESD) += board-mx6q_sabresd.o mx6q_sabresd_pmic_pfuze100.o
+ifeq ($(CONFIG_DSA2L), y)
+	obj-$(CONFIG_MACH_MX6Q_SABRESD) += board-mx6q_dsa2l.o mx6q_dsa2l_pmic_wm831x.o
+else 
+	ifeq ($(CONFIG_DSA2LB), y)
+		obj-$(CONFIG_MACH_MX6Q_SABRESD) += board-mx6q_dsa2lb.o mx6q_dsa2lb_pmic_wm831x.o
+	else
+		obj-$(CONFIG_MACH_MX6Q_SABRESD) += board-mx6q_sabresd.o mx6q_sabresd_pmic_pfuze100.o
+	endif	
+endif
 obj-$(CONFIG_MACH_MX6Q_SABREAUTO) += board-mx6q_sabreauto.o mx6q_sabreauto_pmic_pfuze100.o
+obj-$(CONFIG_MACH_MX6Q_HDMIDONGLE) += board-mx6q_hdmidongle.o mx6q_hdmidongle_pmic_wm831x.o
 obj-$(CONFIG_SMP) += plat_hotplug.o platsmp.o headsmp.o
 obj-$(CONFIG_LOCAL_TIMERS) += localtimer.o
 obj-$(CONFIG_IMX_PCIE) += pcie.o
-obj-$(CONFIG_USB_EHCI_ARC_H1) += usb_h1.o
 obj-$(CONFIG_USB_FSL_ARC_OTG) += usb_dr.o
+obj-$(CONFIG_USB_EHCI_ARC_H1) += usb_h1.o
+obj-$(CONFIG_MACH_IMX_BLUETOOTH_RFKILL) += mx6_bt_rfkill.o
+obj-$(CONFIG_PCI_MSI) += msi.o

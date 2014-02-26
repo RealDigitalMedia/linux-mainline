@@ -5,7 +5,7 @@
  *
  * Author: Mark Brown <broonie@opensource.wolfsonmicro.com>
  *
- * Copyright (C) 2012 Freescale Semiconductor, Inc.
+ * Copyright (C) 2013 Freescale Semiconductor, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -37,7 +37,12 @@
 
 #include "wm8962.h"
 
+// -> [J.Chiang], 2014/01/03 - Removed the following supplies for DSA2L because these voltages are not belong to PMIC.
+#if	defined (CONFIG_DSA2L) || defined (CONFIG_DSA2LB)
+#define WM8962_NUM_SUPPLIES 6
+#else	// CONFIG_DSA2L || CONFIG_DSA2LB
 #define WM8962_NUM_SUPPLIES 8
+#endif // CONFIG_DSA2L || CONFIG_DSA2LB
 static const char *wm8962_supply_names[WM8962_NUM_SUPPLIES] = {
 	"DCVDD",
 	"DBVDD",
@@ -45,8 +50,12 @@ static const char *wm8962_supply_names[WM8962_NUM_SUPPLIES] = {
 	"CPVDD",
 	"MICVDD",
 	"PLLVDD",
+// -> [J.Chiang], 2014/01/03 - Removed the following supplies for DSA2L because these voltages are not belong to PMIC.
+#if	! defined (CONFIG_DSA2L) || ! defined (CONFIG_DSA2LB)
 	"SPKVDD1",
 	"SPKVDD2",
+#endif	// ! (CONFIG_DSA2L || CONFIG_DSA2LB)
+// <- End.
 };
 
 /* codec private data */
@@ -2379,9 +2388,9 @@ static int sysclk_event(struct snd_soc_dapm_widget *w,
 		break;
 
 	case SND_SOC_DAPM_POST_PMD:
-		if (fll)
-			snd_soc_update_bits(codec, WM8962_FLL_CONTROL_1,
-					    WM8962_FLL_ENA, 0);
+		/* After Power-down, close FLL if FLL-enabled */
+		snd_soc_update_bits(codec, WM8962_FLL_CONTROL_1,
+				WM8962_FLL_ENA, 0);
 		break;
 
 	default:
@@ -3461,6 +3470,9 @@ static int wm8962_set_fll(struct snd_soc_codec *codec, int fll_id, int source,
 	if (fll_div.theta || fll_div.lambda)
 		fll1 |= WM8962_FLL_FRAC;
 
+	/* Stop the FLL while we reconfigure */
+	snd_soc_update_bits(codec, WM8962_FLL_CONTROL_1, WM8962_FLL_ENA, 0);
+
 	snd_soc_update_bits(codec, WM8962_FLL_CONTROL_2,
 			    WM8962_FLL_OUTDIV_MASK |
 			    WM8962_FLL_REFCLK_DIV_MASK,
@@ -4101,10 +4113,6 @@ static int wm8962_probe(struct snd_soc_codec *codec)
 			    WM8962_SPKOUTL_VOL_MASK, 0x72);
 	snd_soc_update_bits(codec, WM8962_SPKOUTR_VOLUME,
 			    WM8962_SPKOUTR_VOL_MASK, 0x72);
-	snd_soc_update_bits(codec, WM8962_LEFT_DAC_VOLUME,
-			    WM8962_DACL_VOL_MASK, 0xd8);
-	snd_soc_update_bits(codec, WM8962_RIGHT_DAC_VOLUME,
-			    WM8962_DACR_VOL_MASK, 0xd8);
 
 	snd_soc_update_bits(codec, WM8962_LEFT_INPUT_VOLUME,
 			    WM8962_INL_VOL_MASK, 0x3f);

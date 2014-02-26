@@ -386,6 +386,10 @@ static int __exit imx2_wdt_remove(struct platform_device *pdev)
 
 static void imx2_wdt_shutdown(struct platform_device *pdev)
 {
+	// -> [Walker Chen]
+	extern int phy_wol_enable( void );	
+	phy_wol_enable(); // added WOL function
+	// <- End.	
 	if (test_bit(IMX2_WDT_STATUS_STARTED, &imx2_wdt.status)) {
 		/* we are running, we need to delete the timer but will give
 		 * max timeout before reboot will take place */

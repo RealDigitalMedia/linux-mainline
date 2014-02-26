@@ -1,6 +1,6 @@
 /****************************************************************************
 *
-*    Copyright (C) 2005 - 2012 by Vivante Corp.
+*    Copyright (C) 2005 - 2013 by Vivante Corp.
 *
 *    This program is free software; you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -19,8 +19,6 @@
 *****************************************************************************/
 
 
-
-
 #include "gc_hal_kernel_precomp.h"
 
 #define _GC_OBJ_ZONE    gcvZONE_MMU
@@ -36,6 +34,8 @@ gceMMU_TYPE;
 #define gcmENTRY_TYPE(x) (x & 0xF0)
 
 #define gcdMMU_TABLE_DUMP       0
+
+#define gcdUSE_MMU_EXCEPTION    0
 
 /*
     gcdMMU_CLEAR_VALUE
@@ -97,6 +97,43 @@ static gcsMirrorPageTable_PTR mirrorPageTable = gcvNULL;
 static gctPOINTER mirrorPageTableMutex = gcvNULL;
 #endif
 
+static void
+_WritePageEntry(
+    IN gctUINT32_PTR PageEntry,
+    IN gctUINT32     EntryValue
+    )
+{
+    static gctUINT16 data = 0xff00;
+
+    if (*(gctUINT8 *)&data == 0xff)
+    {
+        *PageEntry = gcmSWAB32(EntryValue);
+    }
+    else
+    {
+        *PageEntry = EntryValue;
+    }
+}
+
+static gctUINT32
+_ReadPageEntry(
+    IN gctUINT32_PTR PageEntry
+    )
+{
+    static gctUINT16 data = 0xff00;
+    gctUINT32 entryValue;
+
+    if (*(gctUINT8 *)&data == 0xff)
+    {
+        entryValue = *PageEntry;
+        return gcmSWAB32(entryValue);
+    }
+    else
+    {
+        return *PageEntry;
+    }
+}
+
 static gceSTATUS
 _FillPageTable(
     IN gctUINT32_PTR PageTable,
@@ -108,7 +145,7 @@ _FillPageTable(
 
     for (i = 0; i < PageCount; i++)
     {
-        PageTable[i] = EntryValue;
+        _WritePageEntry(PageTable + i, EntryValue);
     }
 
     return gcvSTATUS_OK;
@@ -132,16 +169,16 @@ _Link(
         gctUINT32_PTR pageTable = Mmu->pageTableLogical;
 
         /* Dispatch on node type. */
-        switch (gcmENTRY_TYPE(pageTable[Index]))
+        switch (gcmENTRY_TYPE(_ReadPageEntry(&pageTable[Index])))
         {
         case gcvMMU_SINGLE:
             /* Set single index. */
-            pageTable[Index] = (Next << 8) | gcvMMU_SINGLE;
+            _WritePageEntry(&pageTable[Index], (Next << 8) | gcvMMU_SINGLE);
             break;
 
         case gcvMMU_FREE:
             /* Set index. */
-            pageTable[Index + 1] = Next;
+            _WritePageEntry(&pageTable[Index + 1], Next);
             break;
 
         default:
@@ -167,13 +204,13 @@ _AddFree(
     if (Count == 1)
     {
         /* Initialize a single page node. */
-        pageTable[Node] = (~((1U<<8)-1)) | gcvMMU_SINGLE;
+        _WritePageEntry(pageTable + Node, (~((1U<<8)-1)) | gcvMMU_SINGLE);
     }
     else
     {
         /* Initialize the node. */
-        pageTable[Node + 0] = (Count << 8) | gcvMMU_FREE;
-        pageTable[Node + 1] = ~0U;
+        _WritePageEntry(pageTable + Node + 0, (Count << 8) | gcvMMU_FREE);
+        _WritePageEntry(pageTable + Node + 1, ~0U);
     }
 
     /* Append the node. */
@@ -196,7 +233,7 @@ _Collect(
     for (i = 0; i < Mmu->pageTableEntries; ++i)
     {
         /* Dispatch based on type of page. */
-        switch (gcmENTRY_TYPE(pageTable[i]))
+        switch (gcmENTRY_TYPE(_ReadPageEntry(&pageTable[i])))
         {
         case gcvMMU_USED:
             /* Used page, so close any open node. */
@@ -229,10 +266,10 @@ _Collect(
             }
 
             /* Advance the count. */
-            count += pageTable[i] >> 8;
+            count += _ReadPageEntry(&pageTable[i]) >> 8;
 
             /* Advance the index into the page table. */
-            i     += (pageTable[i] >> 8) - 1;
+            i     += (_ReadPageEntry(&pageTable[i]) >> 8) - 1;
             break;
 
         default:
@@ -341,19 +378,20 @@ _FillFlatMapping(
                 gcmkONERROR(gcvSTATUS_NOT_ALIGNED);
             }
 
-            *(Mmu->mtlbLogical + mStart)
-                      = stlb->physBase
-                        /* 64KB page size */
-                        | (1 << 2)
-                        /* Ignore exception */
-                        | (0 << 1)
-                        /* Present */
-                        | (1 << 0);
+            _WritePageEntry(Mmu->mtlbLogical + mStart,
+                            stlb->physBase
+                            /* 64KB page size */
+                            | (1 << 2)
+                            /* Ignore exception */
+                            | (0 << 1)
+                            /* Present */
+                            | (1 << 0)
+                            );
 #if gcdMMU_TABLE_DUMP
             gckOS_Print("%s(%d): insert MTLB[%d]: %08x\n",
                 __FUNCTION__, __LINE__,
                 mStart,
-                *(Mmu->mtlbLogical + mStart));
+                _ReadPageEntry(Mmu->mtlbLogical + mStart));
 #endif
 
             stlb->mtlbIndex = mStart;
@@ -368,12 +406,12 @@ _FillFlatMapping(
             while (sStart <= last)
             {
                 gcmkASSERT(!(start & gcdMMU_PAGE_64K_MASK));
-                *(stlb->logical + sStart) = _SetPage(start);
+                _WritePageEntry(stlb->logical + sStart, _SetPage(start));
 #if gcdMMU_TABLE_DUMP
                 gckOS_Print("%s(%d): insert STLB[%d]: %08x\n",
                     __FUNCTION__, __LINE__,
                     sStart,
-                    *(stlb->logical + sStart));
+                    _ReadPageEntry(stlb->logical + sStart));
 #endif
                 /* next page. */
                 start += gcdMMU_PAGE_64K_SIZE;
@@ -428,7 +466,7 @@ OnError:
         if (pre->mtlbEntryNum != 0)
         {
             gcmkASSERT(pre->mtlbEntryNum == 1);
-            *(Mmu->mtlbLogical + pre->mtlbIndex) = 0;
+            _WritePageEntry(Mmu->mtlbLogical + pre->mtlbIndex, 0);
         }
 
         gcmkVERIFY_OK(gcmkOS_SAFE_FREE(Mmu->os, pre));
@@ -480,14 +518,21 @@ _SetupDynamicSpace(
                 &Mmu->pageTablePhysical,
                 (gctPOINTER)&Mmu->pageTableLogical));
 
+#if gcdUSE_MMU_EXCEPTION
+    gcmkONERROR(_FillPageTable(Mmu->pageTableLogical,
+                               Mmu->pageTableEntries,
+                               /* Enable exception */
+                               1 << 1));
+#else
     /* Invalidate all entries. */
     gcmkONERROR(gckOS_ZeroMemory(Mmu->pageTableLogical,
                 Mmu->pageTableSize));
+#endif
 
     /* Initilization. */
     pageTable      = Mmu->pageTableLogical;
-    pageTable[0]   = (Mmu->pageTableEntries << 8) | gcvMMU_FREE;
-    pageTable[1]   = ~0U;
+    _WritePageEntry(pageTable,     (Mmu->pageTableEntries << 8) | gcvMMU_FREE);
+    _WritePageEntry(pageTable + 1, ~0U);
     Mmu->heapList  = 0;
     Mmu->freeNodes = gcvFALSE;
 
@@ -502,18 +547,20 @@ _SetupDynamicSpace(
     /* Map to Master TLB. */
     for (; i < gcdMMU_MTLB_ENTRY_NUM; i++)
     {
-        Mmu->mtlbLogical[i] = physical
-                            /* 4KB page size */
-                            | (0 << 2)
-                            /* Ignore exception */
-                            | (0 << 1)
-                            /* Present */
-                            | (1 << 0);
+        _WritePageEntry(Mmu->mtlbLogical + i,
+                        physical
+                        /* 4KB page size */
+                        | (0 << 2)
+                        /* Ignore exception */
+                        | (0 << 1)
+                        /* Present */
+                        | (1 << 0)
+                        );
 #if gcdMMU_TABLE_DUMP
         gckOS_Print("%s(%d): insert MTLB[%d]: %08x\n",
                 __FUNCTION__, __LINE__,
                 i,
-                *(Mmu->mtlbLogical + i));
+                _ReadPageEntry(Mmu->mtlbLogical + i));
 #endif
         physical += gcdMMU_STLB_4K_SIZE;
     }
@@ -638,18 +685,11 @@ _Construct(
         pageTable      = mmu->pageTableLogical;
 
 #if gcdMMU_CLEAR_VALUE
-        {
-            gctUINT32 i;
-
-            for (i = 0; i < mmu->pageTableEntries; ++i)
-            {
-                pageTable[i] = gcdMMU_CLEAR_VALUE;
-            }
-        }
+        _FillPageTable(pageTable, mmu->pageTableEntries, gcdMMU_CLEAR_VALUE);
 #endif
 
-        pageTable[0]   = (mmu->pageTableEntries << 8) | gcvMMU_FREE;
-        pageTable[1]   = ~0U;
+        _WritePageEntry(pageTable,     (mmu->pageTableEntries << 8) | gcvMMU_FREE);
+        _WritePageEntry(pageTable + 1, ~0U);
         mmu->heapList  = 0;
         mmu->freeNodes = gcvFALSE;
 
@@ -790,7 +830,7 @@ _Destroy(
         if (pre->mtlbEntryNum != 0)
         {
             gcmkASSERT(pre->mtlbEntryNum == 1);
-            *(Mmu->mtlbLogical + pre->mtlbIndex) = 0;
+            _WritePageEntry(Mmu->mtlbLogical + pre->mtlbIndex, 0);
 #if gcdMMU_TABLE_DUMP
             gckOS_Print("%s(%d): clean MTLB[%d]\n",
                 __FUNCTION__, __LINE__,
@@ -1037,7 +1077,7 @@ _AllocatePages(
         for (index = Mmu->heapList; !gotIt && (index < Mmu->pageTableEntries);)
         {
             /* Check the node type. */
-            switch (gcmENTRY_TYPE(pageTable[index]))
+            switch (gcmENTRY_TYPE(_ReadPageEntry(&pageTable[index])))
             {
             case gcvMMU_SINGLE:
                 /* Single odes are valid if we only need 1 page. */
@@ -1049,13 +1089,13 @@ _AllocatePages(
                 {
                     /* Move to next node. */
                     previous = index;
-                    index    = pageTable[index] >> 8;
+                    index    = _ReadPageEntry(&pageTable[index]) >> 8;
                 }
                 break;
 
             case gcvMMU_FREE:
                 /* Test if the node has enough space. */
-                if (PageCount <= (pageTable[index] >> 8))
+                if (PageCount <= (_ReadPageEntry(&pageTable[index]) >> 8))
                 {
                     gotIt = gcvTRUE;
                 }
@@ -1063,7 +1103,7 @@ _AllocatePages(
                 {
                     /* Move to next node. */
                     previous = index;
-                    index    = pageTable[index + 1];
+                    index    = _ReadPageEntry(&pageTable[index + 1]);
                 }
                 break;
 
@@ -1092,36 +1132,36 @@ _AllocatePages(
         }
     }
 
-    switch (gcmENTRY_TYPE(pageTable[index]))
+    switch (gcmENTRY_TYPE(_ReadPageEntry(&pageTable[index])))
     {
     case gcvMMU_SINGLE:
         /* Unlink single node from free list. */
         gcmkONERROR(
-            _Link(Mmu, previous, pageTable[index] >> 8));
+            _Link(Mmu, previous, _ReadPageEntry(&pageTable[index]) >> 8));
         break;
 
     case gcvMMU_FREE:
         /* Check how many pages will be left. */
-        left = (pageTable[index] >> 8) - PageCount;
+        left = (_ReadPageEntry(&pageTable[index]) >> 8) - PageCount;
         switch (left)
         {
         case 0:
             /* The entire node is consumed, just unlink it. */
             gcmkONERROR(
-                _Link(Mmu, previous, pageTable[index + 1]));
+                _Link(Mmu, previous, _ReadPageEntry(&pageTable[index + 1])));
             break;
 
         case 1:
             /* One page will remain.  Convert the node to a single node and
             ** advance the index. */
-            pageTable[index] = (pageTable[index + 1] << 8) | gcvMMU_SINGLE;
+            _WritePageEntry(&pageTable[index], (_ReadPageEntry(&pageTable[index + 1]) << 8) | gcvMMU_SINGLE);
             index ++;
             break;
 
         default:
             /* Enough pages remain for a new node.  However, we will just adjust
             ** the size of the current node and advance the index. */
-            pageTable[index] = (left << 8) | gcvMMU_FREE;
+            _WritePageEntry(&pageTable[index], (left << 8) | gcvMMU_FREE);
             index += left;
             break;
         }
@@ -1225,25 +1265,37 @@ _FreePages(
 #if gcdMMU_CLEAR_VALUE
     if (Mmu->hardware->mmuVersion == 0)
     {
-        gctUINT32 i;
-
-        for (i = 0; i < PageCount; ++i)
-        {
-            pageTable[i] = gcdMMU_CLEAR_VALUE;
-        }
+        _FillPageTable(pageTable, PageCount, gcdMMU_CLEAR_VALUE);
     }
 #endif
 
     if (PageCount == 1)
     {
         /* Single page node. */
-        pageTable[0] = (~((1U<<8)-1)) | gcvMMU_SINGLE;
+        _WritePageEntry(pageTable,
+                        (~((1U<<8)-1)) | gcvMMU_SINGLE
+#if gcdUSE_MMU_EXCEPTION
+                        /* Enable exception */
+                        | 1 << 1
+#endif
+                        );
     }
     else
     {
         /* Mark the node as free. */
-        pageTable[0] = (PageCount << 8) | gcvMMU_FREE;
-        pageTable[1] = ~0U;
+        _WritePageEntry(pageTable,
+                        (PageCount << 8) | gcvMMU_FREE
+#if gcdUSE_MMU_EXCEPTION
+                        /* Enable exception */
+                        | 1 << 1
+#endif
+                       );
+        _WritePageEntry(pageTable + 1, ~0U);
+
+#if gcdUSE_MMU_EXCEPTION
+        /* Enable exception */
+        gcmkVERIFY_OK(_FillPageTable(pageTable + 2, PageCount - 2, 1 << 1));
+#endif
     }
 
     /* We have free nodes. */
@@ -1280,8 +1332,11 @@ gckMMU_AllocatePages(
     gctUINT32 address;
     gctINT i;
     gckMMU mmu;
+    gctBOOL acquired = gcvFALSE;
+    gctBOOL allocated = gcvFALSE;
 
     gckOS_AcquireMutex(Mmu->os, mirrorPageTableMutex, gcvINFINITE);
+    acquired = gcvTRUE;
 
     /* Allocate page table for current MMU. */
     for (i = 0; i < mirrorPageTable->reference; i++)
@@ -1289,6 +1344,7 @@ gckMMU_AllocatePages(
         if (Mmu == mirrorPageTable->mmus[i])
         {
             gcmkONERROR(_AllocatePages(Mmu, PageCount, PageTable, Address));
+            allocated = gcvTRUE;
         }
     }
 
@@ -1305,9 +1361,24 @@ gckMMU_AllocatePages(
     }
 
     gckOS_ReleaseMutex(Mmu->os, mirrorPageTableMutex);
+    acquired = gcvFALSE;
 
     return gcvSTATUS_OK;
 OnError:
+
+    if (allocated)
+    {
+        /* Page tables for multiple GPU always keep the same. So it is impossible
+         * the fist one allocates successfully but others fail.
+         */
+        gcmkASSERT(0);
+    }
+
+    if (acquired)
+    {
+        gckOS_ReleaseMutex(Mmu->os, mirrorPageTableMutex);
+    }
+
     return status;
 #else
     return _AllocatePages(Mmu, PageCount, PageTable, Address);
@@ -1468,12 +1539,8 @@ gckMMU_SetPage(
         data = _SetPage(PageAddress);
     }
 
-    if (Mmu->hardware->bigEndian)
-    {
-        data = gcmSWAB32(data);
-    }
+    _WritePageEntry(PageEntry, data);
 
-    *PageEntry = data;
 #if gcdMIRROR_PAGETABLE
     for (i = 0; i < mirrorPageTable->reference; i++)
     {
@@ -1483,13 +1550,13 @@ gckMMU_SetPage(
         {
             pageEntry = mmu->pageTableLogical + offset / 4;
 
-            if (Mmu->hardware->mmuVersion == 0)
+            if (mmu->hardware->mmuVersion == 0)
             {
-                *pageEntry = PageAddress;
+                _WritePageEntry(pageEntry, PageAddress);
             }
             else
             {
-                *pageEntry = _SetPage(PageAddress);
+                _WritePageEntry(pageEntry, _SetPage(PageAddress));
             }
         }
 
@@ -1664,6 +1731,39 @@ gckMMU_Flush(
         gckOS_AtomSet(hardware->os, hardware->pageTableDirty, 1));
 #endif
 
+    return gcvSTATUS_OK;
+}
+
+gceSTATUS
+gckMMU_DumpPageTableEntry(
+    IN gckMMU Mmu,
+    IN gctUINT32 Address
+    )
+{
+    gctUINT32_PTR pageTable;
+    gctUINT32 index;
+    gctUINT32 mtlb, stlb;
+
+    gcmkHEADER_ARG("Mmu=0x%08X Address=0x%08X", Mmu, Address);
+    gcmkVERIFY_OBJECT(Mmu, gcvOBJ_MMU);
+
+    gcmkASSERT(Mmu->hardware->mmuVersion > 0);
+
+    mtlb   = (Address & gcdMMU_MTLB_MASK) >> gcdMMU_MTLB_SHIFT;
+    stlb   = (Address & gcdMMU_STLB_4K_MASK) >> gcdMMU_STLB_4K_SHIFT;
+
+    if (Address >= 0x80000000)
+    {
+        pageTable = Mmu->pageTableLogical;
+
+        index = (mtlb - Mmu->dynamicMappingStart)
+              * gcdMMU_STLB_4K_ENTRY_NUM
+              + stlb;
+
+        gcmkPRINT("    Page table entry = 0x%08X", _ReadPageEntry(pageTable + index));
+    }
+
+    gcmkFOOTER_NO();
     return gcvSTATUS_OK;
 }
 

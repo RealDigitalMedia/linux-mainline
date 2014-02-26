@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2012 Freescale Semiconductor, Inc. All Rights Reserved.
+ * Copyright (C) 2011-2013 Freescale Semiconductor, Inc. All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,6 +57,7 @@ volatile unsigned int num_cpu_idle;
 volatile unsigned int num_cpu_idle_lock = 0x0;
 int wait_mode_arm_podf;
 int cur_arm_podf;
+bool enet_is_active;
 void arch_idle_with_workaround(int cpu);
 
 extern void *mx6sl_wfi_iram_base;
@@ -350,7 +351,7 @@ void arch_idle_single_core(void)
 	}
 }
 
-void arch_idle_with_workaround(cpu)
+void arch_idle_with_workaround(int cpu)
 {
 	u32 podf = wait_mode_arm_podf;
 
@@ -369,18 +370,10 @@ void arch_idle_with_workaround(cpu)
 
 }
 
-void arch_idle_multi_core(void)
+void arch_idle_multi_core(int cpu)
 {
 	u32 reg;
-	int cpu = smp_processor_id();
 
-#ifdef CONFIG_LOCAL_TIMERS
-	if (!tick_broadcast_oneshot_active()
-		|| !tick_oneshot_mode_active())
-		return;
-
-	clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_ENTER, &cpu);
-#endif
 	/* iMX6Q and iMX6DL */
 	if ((cpu_is_mx6q() && chip_rev >= IMX_CHIP_REVISION_1_2) ||
 		(cpu_is_mx6dl() && chip_rev >= IMX_CHIP_REVISION_1_1)) {
@@ -398,24 +391,37 @@ void arch_idle_multi_core(void)
 		ca9_do_idle();
 	} else
 		arch_idle_with_workaround(cpu);
-#ifdef CONFIG_LOCAL_TIMERS
-	clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_EXIT, &cpu);
-#endif
-
 }
 
 void arch_idle(void)
 {
+	int cpu = smp_processor_id();
+
 	if (enable_wait_mode) {
-		mxc_cpu_lp_set(WAIT_UNCLOCKED_POWER_OFF);
+#ifdef CONFIG_LOCAL_TIMERS
+		if (!tick_broadcast_oneshot_active()
+			|| !tick_oneshot_mode_active())
+			return;
+
+		clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_ENTER, &cpu);
+#endif
+		if (enet_is_active)
+			/* Don't allow the chip to enter WAIT mode if enet is active
+			  * and the GPIO workaround for ENET interrupts is not used,
+			  * since all ENET interrupts donot wake up the SOC.
+			  */
+			mxc_cpu_lp_set(WAIT_CLOCKED);
+		else
+			mxc_cpu_lp_set(WAIT_UNCLOCKED_POWER_OFF);
 		if (mem_clk_on_in_wait) {
 			u32 reg;
 			/*
 			  * MX6SL, MX6Q (TO1.2 or later) and
-			  * MX6DL (TO1.1 or later) have a bit in CCM_CGPR that
-			  * when cleared keeps the clocks to memories ON
-			  * when ARM is in WFI. This mode can be used when
-			  * IPG clock is very low (12MHz) and the ARM:IPG ratio
+			  * MX6DL (TO1.1 or later) have a bit in
+			  * CCM_CGPR that when cleared keeps the
+			  * clocks to memories ON when ARM is in WFI.
+			  * This mode can be used when IPG clock is
+			  * very low (12MHz) and the ARM:IPG ratio
 			  * perhaps cannot be maintained.
 			  */
 			reg = __raw_readl(MXC_CCM_CGPR);
@@ -427,8 +433,11 @@ void arch_idle(void)
 			/* iMX6SL or iMX6DLS */
 			arch_idle_single_core();
 		else
-			arch_idle_multi_core();
-	} else {
+			arch_idle_multi_core(cpu);
+#ifdef CONFIG_LOCAL_TIMERS
+		clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_EXIT, &cpu);
+#endif
+	}  else {
 		mxc_cpu_lp_set(WAIT_CLOCKED);
 		ca9_do_idle();
 	}
@@ -563,29 +572,39 @@ void mxc_clear_mfgmode(void)
 #endif
 
 #ifdef CONFIG_MXC_REBOOT_ANDROID_CMD
-/* This function will set a bit on SRC_GPR10[7-8] bits to enter
+/* This function will set a bit on SNVS_LPGPR[7-8] bits to enter
  * special boot mode.  These bits will not clear by watchdog reset, so
  * it can be checked by bootloader to choose enter different mode.*/
 
 #define ANDROID_RECOVERY_BOOT  (1 << 7)
 #define ANDROID_FASTBOOT_BOOT  (1 << 8)
+#define ANDROID_PROGRAM_MAC		(1 << 9)
 
 void do_switch_recovery(void)
 {
 	u32 reg;
 
-	reg = __raw_readl(SRC_BASE_ADDR + SRC_GPR10);
+	reg = __raw_readl(MX6Q_SNVS_BASE_ADDR + SNVS_LPGPR);
 	reg |= ANDROID_RECOVERY_BOOT;
-	__raw_writel(reg, SRC_BASE_ADDR + SRC_GPR10);
+	__raw_writel(reg, MX6Q_SNVS_BASE_ADDR + SNVS_LPGPR);
 }
 
 void do_switch_fastboot(void)
 {
 	u32 reg;
 
-	reg = __raw_readl(SRC_BASE_ADDR + SRC_GPR10);
+	reg = __raw_readl(MX6Q_SNVS_BASE_ADDR + SNVS_LPGPR);
 	reg |= ANDROID_FASTBOOT_BOOT;
-	__raw_writel(reg, SRC_BASE_ADDR + SRC_GPR10);
+	__raw_writel(reg, MX6Q_SNVS_BASE_ADDR + SNVS_LPGPR);
+}
+
+void do_program_mac(void)
+{
+	u32 reg;
+
+	reg = __raw_readl(MX6Q_SNVS_BASE_ADDR + SNVS_LPGPR);
+	reg |= ANDROID_PROGRAM_MAC;
+	__raw_writel(reg, MX6Q_SNVS_BASE_ADDR + SNVS_LPGPR);
 }
 #endif
 

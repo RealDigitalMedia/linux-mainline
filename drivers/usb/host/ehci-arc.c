@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 MontaVista Software
- * Copyright (C) 2012 Freescale Semiconductor, Inc.
+ * Copyright (C) 2013 Freescale Semiconductor, Inc.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -246,6 +246,7 @@ int usb_hcd_fsl_probe(const struct hc_driver *driver,
 	 * do platform specific init: check the clock, grab/config pins, etc.
 	 */
 	if (pdata->init && pdata->init(pdev)) {
+		pdata->lowpower = false;
 		retval = -ENODEV;
 		goto err4;
 	}
@@ -314,7 +315,7 @@ err2:
 	usb_put_hcd(hcd);
 err1:
 	dev_err(&pdev->dev, "init %s fail, %d\n", dev_name(&pdev->dev), retval);
-	if (pdata->exit)
+	if (pdata->exit && pdata->pdev)
 		pdata->exit(pdata->pdev);
 	return retval;
 }
@@ -350,9 +351,6 @@ static void usb_hcd_fsl_remove(struct usb_hcd *hcd,
 		}
 	}
 
-	/* DDD shouldn't we turn off the power here? */
-	fsl_platform_set_vbus_power(pdata, 0);
-
 	if (ehci->transceiver) {
 		(void)otg_set_host(ehci->transceiver, 0);
 		otg_put_transceiver(ehci->transceiver);
@@ -361,17 +359,21 @@ static void usb_hcd_fsl_remove(struct usb_hcd *hcd,
 	}
 	/*disable the host wakeup and put phy to low power mode */
 	usb_host_set_wakeup(hcd->self.controller, false);
-	fsl_usb_lowpower_mode(pdata, true);
 	/*free the ehci_fsl_pre_irq  */
 	free_irq(hcd->irq, (void *)pdev);
 	usb_remove_hcd(hcd);
 	usb_put_hcd(hcd);
 
+	fsl_usb_lowpower_mode(pdata, true);
+
+	/* DDD shouldn't we turn off the power here? */
+	fsl_platform_set_vbus_power(pdata, 0);
+
 	/*
 	 * do platform specific un-initialization:
 	 * release iomux pins clocks, etc.
 	 */
-	if (pdata->exit)
+	if (pdata->exit && pdata->pdev)
 		pdata->exit(pdata->pdev);
 
 	iounmap(hcd->regs);
@@ -408,11 +410,23 @@ static void fsl_setup_phy(struct ehci_hcd *ehci,
 	ehci_writel(ehci, portsc, &ehci->regs->port_status[port_offset]);
 }
 
+static void ehci_fsl_stream_disable(struct ehci_hcd *ehci)
+{
+	u32 __iomem	*reg_ptr;
+	u32		tmp;
+
+	reg_ptr = (u32 __iomem *)(((u8 __iomem *)ehci->regs) + USBMODE);
+	tmp = ehci_readl(ehci, reg_ptr);
+	tmp |= CI_USBMODE_SDIS;
+	ehci_writel(ehci, tmp, reg_ptr);
+}
+
 /* called after powerup, by probe or system-pm "wakeup" */
 static int ehci_fsl_reinit(struct ehci_hcd *ehci)
 {
 	fsl_platform_usb_setup(ehci);
 	ehci_port_power(ehci, 0);
+	ehci_fsl_stream_disable(ehci);
 
 	return 0;
 }
@@ -805,6 +819,7 @@ static int ehci_fsl_drv_resume(struct platform_device *pdev)
 	ehci_writel(ehci, pdata->pm_configured_flag,
 		    &ehci->regs->configured_flag);
 
+	ehci_fsl_stream_disable(ehci);
 
 	tmp = ehci_readl(ehci, &ehci->regs->command);
 	tmp |= CMD_RUN;

@@ -1,7 +1,7 @@
 /*
  * Driver for EETI eGalax Multiple Touch Controller
  *
- * Copyright (C) 2012 Freescale Semiconductor, Inc. All Rights Reserved.
+ * Copyright (C) 2012-2013 Freescale Semiconductor, Inc. All Rights Reserved.
  *
  * based on max11801_ts.c
  *
@@ -83,6 +83,7 @@ struct egalax_ts {
 	struct early_suspend		es_handler;
 #endif
 	u32				finger_mask;
+	int				touch_no_wake;
 	struct finger_info		fingers[MAX_SUPPORT_POINTS];
 };
 
@@ -124,51 +125,48 @@ static irqreturn_t egalax_ts_interrupt(int irq, void *dev_id)
 	bool down, valid;
 	u8 state;
 
+	memset(buf, 0, MAX_I2C_DATA_LEN);
 	do {
-		memset(buf, 0, MAX_I2C_DATA_LEN);
-		do {
-			ret = i2c_master_recv(client, buf, MAX_I2C_DATA_LEN);
-		} while (ret == -EAGAIN && tries++ < EGALAX_MAX_TRIES);
+		ret = i2c_master_recv(client, buf, MAX_I2C_DATA_LEN);
+	} while (ret == -EAGAIN && tries++ < EGALAX_MAX_TRIES);
 
-		if (ret < 0)
-			return IRQ_HANDLED;
+	if (ret < 0)
+		return IRQ_HANDLED;
 
-		if (buf[0] != REPORT_MODE_MTTOUCH) {
-			/* ignore mouse events and vendor events */
-			return IRQ_HANDLED;
-		}
+	if (buf[0] != REPORT_MODE_MTTOUCH) {
+		/* ignore mouse events and vendor events */
+		return IRQ_HANDLED;
+	}
 
-		state = buf[1];
-		x = (buf[3] << 8) | buf[2];
-		y = (buf[5] << 8) | buf[4];
-		z = (buf[7] << 8) | buf[6];
+	state = buf[1];
+	x = (buf[3] << 8) | buf[2];
+	y = (buf[5] << 8) | buf[4];
+	z = (buf[7] << 8) | buf[6];
 
-		valid = state & EVENT_VALID_MASK;
-		id = (state & EVENT_ID_MASK) >> EVENT_ID_OFFSET;
-		down = state & EVENT_DOWN_UP;
+	valid = state & EVENT_VALID_MASK;
+	id = (state & EVENT_ID_MASK) >> EVENT_ID_OFFSET;
+	down = state & EVENT_DOWN_UP;
 
-		if (!valid || id >= MAX_SUPPORT_POINTS) {
-			dev_dbg(&client->dev, "point invalid\n");
-			return IRQ_HANDLED;
-		}
+	if (!valid || id >= MAX_SUPPORT_POINTS) {
+		dev_dbg(&client->dev, "point invalid\n");
+		return IRQ_HANDLED;
+	}
 
-		if (data->finger_mask & (1U << id))
-			report_input_data(data);
+	if (data->finger_mask & (1U << id))
+		report_input_data(data);
 
-		if (!down) {
-			data->fingers[id].z = -1;
-			data->finger_mask |= 1U << id;
-		} else {
-			data->fingers[id].x = x;
-			data->fingers[id].y = y;
-			data->fingers[id].z = z;
-			data->finger_mask |= 1U << id;
-		}
+	if (!down) {
+		data->fingers[id].z = -1;
+		data->finger_mask |= 1U << id;
+	} else {
+		data->fingers[id].x = x;
+		data->fingers[id].y = y;
+		data->fingers[id].z = z;
+		data->finger_mask |= 1U << id;
+	}
 
-		dev_dbg(&client->dev, "%s id:%d x:%d y:%d z:%d\n",
-			(down ? "down" : "up"), id, x, y, z);
-
-	} while (gpio_get_value(irq_to_gpio(client->irq)) == 0);
+	dev_dbg(&client->dev, "%s id:%d x:%d y:%d z:%d\n",
+		(down ? "down" : "up"), id, x, y, z);
 
 	if (data->finger_mask)
 		report_input_data(data);
@@ -241,7 +239,11 @@ static int __devinit egalax_ts_probe(struct i2c_client *client,
 	data->client = client;
 	data->input_dev = input_dev;
 	/* controller may be in sleep, wake it up. */
-	egalax_wake_up_device(client);
+	if (egalax_wake_up_device(client) != 0) {
+		dev_info(&client->dev, "Failed to wake up, disable suspend,"
+			 " otherwise it can not wake up\n");
+		data->touch_no_wake = true;
+	}
 	msleep(10);
 	/* the controller needs some time to wakeup, otherwise the
 	 * following firmware version read will be failed.
@@ -286,12 +288,15 @@ static int __devinit egalax_ts_probe(struct i2c_client *client,
 	i2c_set_clientdata(client, data);
 
 #ifdef CONFIG_EARLYSUSPEND
-	/* register this client's earlysuspend */
-	data->es_handler.level = EARLY_SUSPEND_LEVEL_DISABLE_FB;
-	data->es_handler.suspend = egalax_early_suspend;
-	data->es_handler.resume = egalax_later_resume;
-	data->es_handler.data = (void *)client;
-	register_early_suspend(&data->es_handler);
+	/* Not register earlysuspend if not way to wake device. */
+	if (data->touch_no_wake == false) {
+		/* register this client's earlysuspend */
+		data->es_handler.level = EARLY_SUSPEND_LEVEL_DISABLE_FB;
+		data->es_handler.suspend = egalax_early_suspend;
+		data->es_handler.resume = egalax_later_resume;
+		data->es_handler.data = (void *)client;
+		register_early_suspend(&data->es_handler);
+	}
 #endif
 
 	return 0;
@@ -333,6 +338,13 @@ static int egalax_ts_suspend(struct device *dev)
 	u8 suspend_cmd[MAX_I2C_DATA_LEN] = {0x3, 0x6, 0xa, 0x3, 0x36,
 					    0x3f, 0x2, 0, 0, 0};
 	struct i2c_client *client = to_i2c_client(dev);
+	struct egalax_ts *data = i2c_get_clientdata(client);
+
+	/* If can not wake up, not suspend. */
+	if (data->touch_no_wake) {
+		dev_info(&client->dev, "not suspend because unable to wake up device\n");
+		return 0;
+	}
 	ret = i2c_master_send(client, suspend_cmd, MAX_I2C_DATA_LEN);
 	return ret > 0 ? 0 : ret;
 }
@@ -340,6 +352,11 @@ static int egalax_ts_suspend(struct device *dev)
 static int egalax_ts_resume(struct device *dev)
 {
 	struct i2c_client *client = to_i2c_client(dev);
+	struct egalax_ts *data = i2c_get_clientdata(client);
+
+	/* If not wake up, don't needs resume. */
+	if (data->touch_no_wake)
+		return 0;
 	return egalax_wake_up_device(client);
 }
 #endif

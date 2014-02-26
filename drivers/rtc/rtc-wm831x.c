@@ -25,6 +25,11 @@
 #include <linux/delay.h>
 #include <linux/platform_device.h>
 
+// -> [J.Chiang], 2014/01/02 
+#include <mach/gpio.h>
+
+#define DSA2L_PMIC_INT IMX_GPIO_NR(7, 11)
+// <- End.
 
 /*
  * R16416 (0x4020) - RTC Write Counter
@@ -268,6 +273,9 @@ static int wm831x_rtc_setalarm(struct device *dev, struct rtc_wkalrm *alrm)
 	int ret;
 	unsigned long time;
 
+	// -> [J.Chiang], Debug
+	printk("wm831x_rtc_setalarm is called...\n");
+	// <- End.
 	ret = rtc_tm_to_time(&alrm->time, &time);
 	if (ret < 0) {
 		dev_err(dev, "Failed to convert time: %d\n", ret);
@@ -307,6 +315,9 @@ static int wm831x_rtc_setalarm(struct device *dev, struct rtc_wkalrm *alrm)
 static int wm831x_rtc_alarm_irq_enable(struct device *dev,
 				       unsigned int enabled)
 {
+	// -> [J.Chiang], Debug
+	printk("wm831x_rtc_alarm_irq set to 0x%x...\n", enabled);
+	// <- End.
 	struct wm831x_rtc *wm831x_rtc = dev_get_drvdata(dev);
 
 	if (enabled)
@@ -354,6 +365,11 @@ static int wm831x_rtc_suspend(struct device *dev)
 	else
 		enable = 0;
 
+	// -> [J.Chiang], 2014/01/02
+	printk( "'wm831x_rtc_suspend' was called,set  RTC_PMIC_INT(%d) to %d...\n", gpio_to_irq(DSA2L_PMIC_INT), enable);
+	irq_set_irq_wake( gpio_to_irq(DSA2L_PMIC_INT), enable);
+	// <- End.
+	
 	ret = wm831x_set_bits(wm831x_rtc->wm831x, WM831X_RTC_CONTROL,
 			      WM831X_RTC_ALM_ENA, enable);
 	if (ret != 0)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Freescale Semiconductor, Inc. All Rights Reserved.
+ * Copyright (C) 2012-2013 Freescale Semiconductor, Inc. All Rights Reserved.
  */
 
 /*
@@ -106,17 +106,43 @@ static struct i2c_client *ldb_i2c_client[2];
 static u8 g_edid[2][512];
 
 static struct fb_videomode ldb_modedb[] = {
+	// -> [Walker Chen], 2014/01/09 - change WXGA to 1366x768
 	{
-	 "LDB-WXGA", 60, 1280, 800, 14065,
-	 40, 40,
-	 10, 3,
-	 80, 10,
+	 "VIC-WXGA", 60, 1280, 800, 14065,
+	 105, 23,
+	 35, 6,
+	 15, 5,
 	 0,
 	 FB_VMODE_NONINTERLACED,
 	 FB_MODE_IS_DETAILED,},
 	{
+	 "LDB-WXGA", 50, 1366, 768, 13255, // pixel clock 76Mhz => 1/76MHz = 13158pSec
+	 64, 32,  // 194
+	 12, 6,   // 38
+	 98, 20,
+	 0,
+	 FB_VMODE_NONINTERLACED,
+	 FB_MODE_IS_DETAILED,},
+	//{
+	// "LDB-WVGA", 60, 800, 480, 31250, // pixel clock 32Mhz => 1/32MHz = 31250pSec 
+	// 220, 40,
+	// 21, 7,
+	// 60, 10,
+	// 0,
+	// FB_VMODE_NONINTERLACED,
+	// FB_MODE_IS_DETAILED,}, 
+	{
+	 "LDB-WVGA", 60, 1024, 600, 21067,
+	 175, 13,
+	 25, 3,
+	 28, 8,
+	 0,
+	 FB_VMODE_NONINTERLACED,
+	 FB_MODE_IS_DETAILED,},
+	 // <- End.
+	{
 	 "LDB-XGA", 60, 1024, 768, 15385,
-	 220, 40,
+	 240, 40,
 	 21, 7,
 	 60, 10,
 	 0,
@@ -242,6 +268,8 @@ static int ldb_disp_setup(struct mxc_dispdrv_handle *disp, struct fb_info *fbi)
 	val = readl(ldb->control_reg);
 	val |= ldb->setting[setting_idx].ch_val;
 	writel(val, ldb->control_reg);
+	dev_dbg(&ldb->pdev->dev, "LDB setup, control reg:0x%x\n",
+			readl(ldb->control_reg));
 
 	/* vsync setup */
 	reg = readl(ldb->control_reg);
@@ -325,6 +353,9 @@ int ldb_fb_event(struct notifier_block *nb, unsigned long val, void *v)
 				data = readl(ldb->control_reg);
 				data &= ~ldb->setting[index].ch_mask;
 				writel(data, ldb->control_reg);
+				dev_dbg(&ldb->pdev->dev,
+					"LDB blank, control reg:0x%x\n",
+						readl(ldb->control_reg));
 			}
 		}
 		break;
@@ -417,6 +448,7 @@ static int ldb_disp_init(struct mxc_dispdrv_handle *disp,
 	uint32_t reg, setting_idx;
 	uint32_t ch_mask = 0, ch_val = 0;
 	int lvds_channel = 0;
+	uint32_t ipu_id, disp_id;
 
 	/* if input format not valid, make RGB666 as default*/
 	if (!valid_mode(setting->if_fmt)) {
@@ -483,6 +515,28 @@ static int ldb_disp_init(struct mxc_dispdrv_handle *disp,
 					"channel%d.\n",
 					plat_data->disp_id, ret, ret);
 				plat_data->disp_id = ret;
+			}
+		} else if (((ldb->mode == LDB_SEP0) || (ldb->mode == LDB_SEP1))
+				&& (cpu_is_mx6q() || cpu_is_mx6dl())) {
+			if (plat_data->disp_id == plat_data->sec_disp_id) {
+				dev_err(&ldb->pdev->dev,
+					"For LVDS separate mode,"
+					"two DIs should be different!\n");
+				return -EINVAL;
+			}
+
+			if (((!plat_data->disp_id) && (ldb->mode == LDB_SEP1))
+				|| ((plat_data->disp_id) &&
+					(ldb->mode == LDB_SEP0))) {
+				dev_dbg(&ldb->pdev->dev,
+					"LVDS separate mode:"
+					"swap DI configuration!\n");
+				ipu_id = plat_data->ipu_id;
+				disp_id = plat_data->disp_id;
+				plat_data->ipu_id = plat_data->sec_ipu_id;
+				plat_data->disp_id = plat_data->sec_disp_id;
+				plat_data->sec_ipu_id = ipu_id;
+				plat_data->sec_disp_id = disp_id;
 			}
 		}
 
@@ -693,19 +747,8 @@ static int ldb_disp_init(struct mxc_dispdrv_handle *disp,
 	ldb->setting[setting_idx].ch_mask = ch_mask;
 	ldb->setting[setting_idx].ch_val = ch_val;
 
-	if (cpu_is_mx6q() || cpu_is_mx6dl()) {
-		if ((ldb->mode == LDB_SEP0) || (ldb->mode == LDB_SEP1)) {
-			reg = readl(ldb->control_reg);
-			reg &= ~(LDB_CH0_MODE_MASK | LDB_CH1_MODE_MASK);
-			reg |= LDB_CH0_MODE_EN_TO_DI0 | LDB_CH1_MODE_EN_TO_DI1;
-			writel(reg, ldb->control_reg);
-			ldb->setting[setting_idx].ch_mask = setting->disp_id ?
-					LDB_CH1_MODE_MASK : LDB_CH0_MODE_MASK;
-			ldb->setting[setting_idx].ch_val = setting->disp_id ?
-				LDB_CH1_MODE_EN_TO_DI1 : LDB_CH0_MODE_EN_TO_DI0;
-		}
+	if (cpu_is_mx6q() || cpu_is_mx6dl())
 		ldb_ipu_ldb_route(setting->dev_id, setting->disp_id, ldb);
-	}
 
 	/*
 	 * ldb_di0_clk -> ipux_di0_clk

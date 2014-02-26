@@ -19,7 +19,7 @@
  * Copyright (c) 2004-2006 Macq Electronique SA.
  *
  * Support for FEC IEEE 1588.
- * Copyright (C) 2012 Freescale Semiconductor, Inc.
+ * Copyright (C) 2010-2013 Freescale Semiconductor, Inc.
  */
 
 #include <linux/module.h>
@@ -27,6 +27,7 @@
 #include <linux/string.h>
 #include <linux/ptrace.h>
 #include <linux/errno.h>
+#include <linux/gpio.h>
 #include <linux/ioport.h>
 #include <linux/slab.h>
 #include <linux/interrupt.h>
@@ -70,11 +71,13 @@
 #define FEC_QUIRK_ENET_MAC		(1 << 0)
 /* Controller needs driver to swap frame */
 #define FEC_QUIRK_SWAP_FRAME		(1 << 1)
+/* ENET IP errata ticket TKT168103 */
+#define FEC_QUIRK_BUG_TKT168103		(1 << 2)
 
 static struct platform_device_id fec_devtype[] = {
 	{
 		.name = "enet",
-		.driver_data = FEC_QUIRK_ENET_MAC,
+		.driver_data = FEC_QUIRK_ENET_MAC | FEC_QUIRK_BUG_TKT168103,
 	},
 	{
 		.name = "fec",
@@ -82,7 +85,8 @@ static struct platform_device_id fec_devtype[] = {
 	},
 	{
 		.name = "imx28-fec",
-		.driver_data = FEC_QUIRK_ENET_MAC | FEC_QUIRK_SWAP_FRAME,
+		.driver_data = FEC_QUIRK_ENET_MAC | FEC_QUIRK_SWAP_FRAME |
+				FEC_QUIRK_BUG_TKT168103,
 	},
 	{ }
 };
@@ -229,6 +233,7 @@ struct fec_enet_private {
 	int	link;
 	int	full_duplex;
 	struct	completion mdio_done;
+	struct delayed_work fixup_trigger_tx;
 
 	struct  fec_ptp_private *ptp_priv;
 	uint    ptimer_present;
@@ -278,13 +283,44 @@ static void *swap_buffer(void *bufaddr, int len)
 	return bufaddr;
 }
 
+static inline
+void *fec_enet_get_pre_txbd(struct net_device *ndev)
+{
+	struct fec_enet_private *fep = netdev_priv(ndev);
+	struct bufdesc *bdp = fep->cur_tx;
+
+	if (bdp == fep->tx_bd_base)
+		return bdp + TX_RING_SIZE;
+	else
+		return bdp - 1;
+
+}
+
+/* MTIP enet IP have one IC issue recorded at PDM ticket:TKT168103
+ * The TDAR bit after being set by software is not acted upon by the
+ * ENET module due to the timing of when the ENET state machine
+ * clearing the TDAR bit occurring coincident or momentarily after
+ * the software sets the bit.
+ * This forces ENET module to check the Transmit buffer descriptor
+ * and take action if the “ready” flag is set. Otherwise the ENET
+ * returns to idle mode.
+ */
+static void fixup_trigger_tx_func(struct work_struct *work)
+{
+	struct fec_enet_private *fep =
+			container_of(work, struct fec_enet_private,
+					fixup_trigger_tx.work);
+
+	writel(0, fep->hwp + FEC_X_DES_ACTIVE);
+}
+
 static netdev_tx_t
 fec_enet_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 {
 	struct fec_enet_private *fep = netdev_priv(ndev);
 	const struct platform_device_id *id_entry =
 				platform_get_device_id(fep->pdev);
-	struct bufdesc *bdp;
+	struct bufdesc *bdp, *bdp_pre;
 	void *bufaddr;
 	unsigned short	status;
 	unsigned long   estatus;
@@ -300,7 +336,6 @@ fec_enet_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 
 	/* Fill in a Tx ring entry */
 	bdp = fep->cur_tx;
-
 	status = bdp->cbd_sc;
 
 	if (status & BD_ENET_TX_READY) {
@@ -372,6 +407,12 @@ fec_enet_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 
 	/* Trigger transmission start */
 	writel(0, fep->hwp + FEC_X_DES_ACTIVE);
+
+	bdp_pre = fec_enet_get_pre_txbd(ndev);
+	if ((id_entry->driver_data & FEC_QUIRK_BUG_TKT168103) &&
+		!(bdp_pre->cbd_sc & BD_ENET_TX_READY))
+		schedule_delayed_work(&fep->fixup_trigger_tx,
+					 msecs_to_jiffies(1));
 
 	/* If this was the last BD in the ring, start at the beginning again. */
 	if (status & BD_ENET_TX_WRAP)
@@ -840,7 +881,13 @@ fec_enet_interrupt(int irq, void *dev_id)
 
 	return ret;
 }
-
+static irqreturn_t
+phy_wol_interrupt(int irq, void *dev_id)
+{
+	printk("%s\n", __func__);
+	return IRQ_HANDLED;
+ 
+}
 
 
 /* ------------------------------------------------------------------------- */
@@ -1035,6 +1082,35 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	phy_dev = phy_connect(ndev, phy_name, &fec_enet_adjust_link, 0,
 		fep->phy_interface);
 
+	// -> [Walker Chen], 2014/01/20 - DSA2L, WOL enable
+	unsigned short val;	
+	
+	// -> [J.Chiang], 2014/01/22 - WOL implementation, moved the following setting to suspend/resume handlers
+	val = phy_read(phy_dev, 0x12);
+	val &= ~0x01;
+	phy_write(phy_dev, 0x12, val);
+	// <- End.
+
+	phy_write( phy_dev, 0xd, 0x3);
+	phy_write( phy_dev, 0xe, 0x804A);
+	phy_write( phy_dev, 0xd, 0xc003);
+	val = ( ndev->dev_addr[0] << 0x8) | ndev->dev_addr[1];
+	phy_write( phy_dev, 0xe, val );
+	val = ( ndev->dev_addr[2] << 0x8) | ndev->dev_addr[3];
+	phy_write( phy_dev, 0xe, val);
+	val = ( ndev->dev_addr[4] << 0x8) | ndev->dev_addr[5];
+	phy_write( phy_dev, 0xe, val );
+	/*
+	printk("wol:mac_address=%02x:%02x:%02x:%02x:%02x:%02x\n",
+		ndev->dev_addr[0],
+		ndev->dev_addr[1],
+		ndev->dev_addr[2],
+		ndev->dev_addr[3],
+		ndev->dev_addr[4],
+		ndev->dev_addr[5]	);
+	*/
+	// <- End.
+	
 	if (IS_ERR(phy_dev)) {
 		printk(KERN_ERR "%s: could not attach to PHY\n", ndev->name);
 		return PTR_ERR(phy_dev);
@@ -1045,6 +1121,9 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 		phy_dev->supported &= PHY_GBIT_FEATURES;
 	else
 		phy_dev->supported &= PHY_BASIC_FEATURES;
+
+	/* enable phy pause frame for any platform */
+	phy_dev->supported |= ADVERTISED_Pause;
 
 	phy_dev->advertising = phy_dev->supported;
 
@@ -1829,6 +1908,17 @@ fec_probe(struct platform_device *pdev)
 	if (pdata)
 		fep->phy_interface = pdata->phy;
 
+#ifdef CONFIG_MX6_ENET_IRQ_TO_GPIO
+	gpio_request(pdata->gpio_irq, "gpio_enet_irq");
+	gpio_direction_input(pdata->gpio_irq);
+
+	irq = gpio_to_irq(pdata->gpio_irq);
+	ret = request_irq(irq, fec_enet_interrupt,
+			IRQF_TRIGGER_RISING,
+			 pdev->name, ndev);
+	if (ret)
+		goto failed_irq;
+#else
 	/* This device has up to three irqs on some platforms */
 	for (i = 0; i < 3; i++) {
 		irq = platform_get_irq(pdev, i);
@@ -1843,6 +1933,22 @@ fec_probe(struct platform_device *pdev)
 			goto failed_irq;
 		}
 	}
+#endif
+
+	// -> [J.Chiang], 2014/01/22 - WOL implementation, WOL event will be a "power-Key" event. Removed following code.
+	/*
+	if (pdata->wol_irq > 0) {
+		gpio_request(pdata->wol_irq, "gpio_wol_irq");
+		gpio_direction_input(pdata->wol_irq);
+		irq = gpio_to_irq(pdata->wol_irq);
+		irq_set_irq_wake( irq , 1 );
+		ret = request_irq(irq, phy_wol_interrupt,
+				IRQF_TRIGGER_FALLING,
+				 "enet_wol", ndev);
+		enable_irq_wake(irq);
+	}
+	*/
+	// <- End.
 
 	fep->clk = clk_get(&pdev->dev, "fec_clk");
 	if (IS_ERR(fep->clk)) {
@@ -1875,6 +1981,8 @@ fec_probe(struct platform_device *pdev)
 	netif_carrier_off(ndev);
 	clk_disable(fep->clk);
 
+	INIT_DELAYED_WORK(&fep->fixup_trigger_tx, fixup_trigger_tx_func);
+
 	ret = register_netdev(ndev);
 	if (ret)
 		goto failed_register;
@@ -1891,11 +1999,15 @@ failed_init:
 	clk_disable(fep->clk);
 	clk_put(fep->clk);
 failed_clk:
+#ifdef CONFIG_MX6_ENET_IRQ_TO_GPIO
+	free_irq(irq, ndev);
+#else
 	for (i = 0; i < 3; i++) {
 		irq = platform_get_irq(pdev, i);
 		if (irq > 0)
 			free_irq(irq, ndev);
 	}
+#endif
 failed_irq:
 	iounmap(fep->hwp);
 failed_ioremap:
@@ -1913,6 +2025,7 @@ fec_drv_remove(struct platform_device *pdev)
 	struct fec_enet_private *fep = netdev_priv(ndev);
 	struct resource *r;
 
+	cancel_delayed_work_sync(&fep->fixup_trigger_tx);
 	fec_stop(ndev);
 	fec_enet_mii_remove(fep);
 	clk_disable(fep->clk);

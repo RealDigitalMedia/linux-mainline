@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2012 Freescale Semiconductor, Inc. All Rights Reserved.
+ * Copyright 2004-2013 Freescale Semiconductor, Inc. All Rights Reserved.
  */
 
 /*
@@ -562,6 +562,8 @@ static void dr_controller_stop(struct fsl_udc *udc)
 	tmp &= ~USB_CMD_RUN_STOP;
 	fsl_writel(tmp, &dr_regs->usbcmd);
 
+	/* disable pulldown dp and dm */
+	dr_discharge_line(udc->pdata, true);
 	return;
 }
 
@@ -2519,6 +2521,7 @@ int usb_gadget_unregister_driver(struct usb_gadget_driver *driver)
 
 	dr_phy_low_power_mode(udc_controller, true);
 
+	dr_clk_gate(false);
 	printk(KERN_INFO "unregistered gadget driver '%s'\r\n",
 	       driver->driver.name);
 	return 0;
@@ -2911,6 +2914,7 @@ static void fsl_udc_release(struct device *dev)
 	dma_free_coherent(dev, udc_controller->ep_qh_size,
 			udc_controller->ep_qh, udc_controller->ep_qh_dma);
 	kfree(udc_controller);
+	udc_controller = NULL;
 }
 
 /******************************************************************
@@ -3071,6 +3075,7 @@ static int __devinit fsl_udc_probe(struct platform_device *pdev)
 	 * do platform specific init: check the clock, grab/config pins, etc.
 	 */
 	if (pdata->init && pdata->init(pdev)) {
+		pdata->lowpower = false;
 		ret = -ENODEV;
 		goto err2a;
 	}
@@ -3255,8 +3260,7 @@ static int  fsl_udc_remove(struct platform_device *pdev)
 		return -ENODEV;
 	udc_controller->done = &done;
 	/* open USB PHY clock */
-	if (udc_controller->stopped)
-		dr_clk_gate(true);
+	dr_clk_gate(true);
 
 	/* disable wake up and otgsc interrupt for safely remove udc driver*/
 	temp = fsl_readl(&dr_regs->otgsc);
@@ -3296,7 +3300,6 @@ static int  fsl_udc_remove(struct platform_device *pdev)
 	release_mem_region(res->start, resource_size(res));
 }
 #endif
-
 	device_unregister(&udc_controller->gadget.dev);
 	/* free udc --wait for the release() finished */
 	wait_for_completion(&done);
@@ -3306,9 +3309,6 @@ static int  fsl_udc_remove(struct platform_device *pdev)
 	 */
 	if (pdata->exit)
 		pdata->exit(pdata->pdev);
-
-	if (udc_controller->stopped)
-		dr_clk_gate(false);
 
 	return 0;
 }

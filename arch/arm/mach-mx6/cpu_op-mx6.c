@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2012 Freescale Semiconductor, Inc. All Rights Reserved.
+ * Copyright (C) 2010-2013 Freescale Semiconductor, Inc. All Rights Reserved.
  */
 
 /*
@@ -342,18 +342,27 @@ void mx6_cpu_op_init(void)
 {
 	unsigned int reg;
 	void __iomem *base;
-	if (cpu_is_mx6q()) {
+	if (!cpu_is_mx6sl()) {
 		/*read fuse bit to know the max cpu freq : offset 0x440
-		* bit[17:16]:SPEED_GRADING[1:0]*/
+		* bit[17:16]:SPEED_GRADING[1:0],for mx6dq/dl*/
 		base = IO_ADDRESS(OCOTP_BASE_ADDR);
 		reg = __raw_readl(base + 0x440);
 		reg &= (0x3 << OCOTP_SPEED_BIT_OFFSET);
 		reg >>= OCOTP_SPEED_BIT_OFFSET;
 		/*choose the little value to run lower max cpufreq*/
 		arm_max_freq = (reg > arm_max_freq) ? arm_max_freq : reg;
-	} else
-		arm_max_freq = CPU_AT_1GHz;/*mx6dl/sl max freq is 1Ghz*/
-	printk(KERN_INFO "arm_max_freq=%x\n", arm_max_freq);
+	} else {
+		/*
+		 * There is no SPEED_GRADING fuse bit on mx6sl,then do:
+		 * If arm_max_freq set by default on CPU_AT_1_2GHz which mean
+		 * there is no 'arm_freq' setting in cmdline from bootloader,
+		 * force arm_max_freq to 1G. Else use 'arm_freq' setting.
+		 */
+		if (arm_max_freq == CPU_AT_1_2GHz)
+			arm_max_freq = CPU_AT_1GHz;/*mx6sl max freq is 1Ghz*/
+	}
+	printk(KERN_INFO "arm_max_freq=%s\n", (arm_max_freq == CPU_AT_1_2GHz) ?
+		"1.2GHz" : ((arm_max_freq == CPU_AT_1GHz) ? "1GHz" : "800MHz"));
 	get_cpu_op = mx6_get_cpu_op;
 	set_num_cpu_op = mx6_set_num_cpu_op;
 

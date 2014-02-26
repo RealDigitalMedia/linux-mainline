@@ -183,7 +183,10 @@ static int led_suspend(struct device *dev, pm_message_t state)
 
 	if (led_cdev->flags & LED_CORE_SUSPENDRESUME)
 		led_classdev_suspend(led_cdev);
-
+	// -> [Walker Chen], 2014/01/27 - Turn on all LEDs when system was suspend for DSA2L
+	//printk( "%s:%s:%d\n" , __func__ , led_cdev->name , led_cdev->max_brightness );
+	led_cdev->brightness_set(led_cdev, led_cdev->max_brightness);
+	// <- End.
 	return 0;
 }
 
@@ -193,7 +196,10 @@ static int led_resume(struct device *dev)
 
 	if (led_cdev->flags & LED_CORE_SUSPENDRESUME)
 		led_classdev_resume(led_cdev);
-
+	// -> [Walker Chen], 2014/01/27 - Turn on all LEDs when system was suspend for DSA2L	
+	//printk( "%s:%s:%d\n" , __func__ , led_cdev->name , led_cdev->brightness );
+	led_cdev->brightness_set(led_cdev, led_cdev->brightness);
+	// <- End.
 	return 0;
 }
 

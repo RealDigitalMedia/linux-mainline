@@ -1,6 +1,6 @@
 /****************************************************************************
 *
-*    Copyright (C) 2005 - 2012 by Vivante Corp.
+*    Copyright (C) 2005 - 2013 by Vivante Corp.
 *
 *    This program is free software; you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -17,8 +17,6 @@
 *    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 *
 *****************************************************************************/
-
-
 
 
 #ifndef __gc_hal_options_h_
@@ -43,21 +41,16 @@
 #endif
 
 /*
-    NO_USER_DIRECT_ACCESS_FROM_KERNEL
-
-        This define enables the Linux kernel behavior accessing user memory.
-*/
-#ifndef NO_USER_DIRECT_ACCESS_FROM_KERNEL
-#   define NO_USER_DIRECT_ACCESS_FROM_KERNEL    0
-#endif
-
-/*
     VIVANTE_PROFILER
 
         This define enables the profiler.
 */
 #ifndef VIVANTE_PROFILER
 #   define VIVANTE_PROFILER                     0
+#endif
+
+#ifndef VIVANTE_PROFILER_PERDRAW
+#   define  VIVANTE_PROFILER_PERDRAW    0
 #endif
 
 /*
@@ -121,6 +114,30 @@
 #define COMMAND_PROCESSOR_VERSION               1
 
 /*
+    gcdDUMP_KEY
+
+        Set this to a string that appears in 'cat /proc/<pid>/cmdline'. E.g. 'camera'.
+        HAL will create dumps for the processes matching this key.
+*/
+#ifndef gcdDUMP_KEY
+#   define gcdDUMP_KEY                          "process"
+#endif
+
+/*
+    gcdDUMP_PATH
+
+        The dump file location. Some processes cannot write to the sdcard.
+        Try apps' data dir, e.g. /data/data/com.android.launcher
+*/
+#ifndef gcdDUMP_PATH
+#if defined(ANDROID)
+#   define gcdDUMP_PATH                         "/mnt/sdcard/"
+#else
+#   define gcdDUMP_PATH                         "./"
+#endif
+#endif
+
+/*
     gcdDUMP
 
         When set to 1, a dump of all states and memory uploads, as well as other
@@ -159,14 +176,6 @@
 */
 #ifndef gcdVIRTUAL_COMMAND_BUFFER
 #   define gcdVIRTUAL_COMMAND_BUFFER            0
-#endif
-
-/*
-    gcdENABLE_FSCALE_VAL_ADJUST
-        When non-zero, FSCALE_VAL when gcvPOWER_ON can be adjusted externally.
- */
-#ifndef gcdENABLE_FSCALE_VAL_ADJUST
-#   define gcdENABLE_FSCALE_VAL_ADJUST          1
 #endif
 
 /*
@@ -357,6 +366,17 @@
 #endif
 
 /*
+    gcdUSER_HEAP_ALLOCATOR
+
+        Set to 1 to enable user mode heap allocator for fast memory allocation
+        and destroying. Otherwise, memory allocation/destroying in user mode
+        will be directly managed by system. Only for linux for now.
+*/
+#ifndef gcdUSER_HEAP_ALLOCATOR
+#   define gcdUSER_HEAP_ALLOCATOR               1
+#endif
+
+/*
     gcdHEAP_SIZE
 
         Set the allocation size for the internal heaps.  Each time a heap is
@@ -411,7 +431,7 @@
 #   if gcdFPGA_BUILD
 #       define gcdGPU_TIMEOUT                   0
 #   else
-#       define gcdGPU_TIMEOUT                   (2000 * 5)
+#       define gcdGPU_TIMEOUT                   20000
 #   endif
 #endif
 
@@ -768,6 +788,10 @@
 #   define  gcdANDROID_UNALIGNED_LINEAR_COMPOSITION_ADJUST    0
 #endif
 
+#ifndef gcdENABLE_PE_DITHER_FIX
+#   define gcdENABLE_PE_DITHER_FIX              1
+#endif
+
 #ifndef gcdSHARED_PAGETABLE
 #   define gcdSHARED_PAGETABLE                  1
 #endif
@@ -796,7 +820,22 @@
         limited by gcdCONTIGUOUS_SIZE_LIMIT.
  */
 #ifndef gcdCONTIGUOUS_SIZE_LIMIT
-#   define gcdCONTIGUOUS_SIZE_LIMIT             4096
+#   define gcdCONTIGUOUS_SIZE_LIMIT             0
+#endif
+
+#ifndef gcdDISALBE_EARLY_EARLY_Z
+#   define gcdDISALBE_EARLY_EARLY_Z             1
+#endif
+
+/*
+    gcdLINK_QUEUE_SIZE
+
+        When non-zero, driver maintains a queue to record information of
+        latest lined context buffer and command buffer. Data in this queue
+        is be used to debug.
+*/
+#ifndef gcdLINK_QUEUE_SIZE
+#   define gcdLINK_QUEUE_SIZE                  0
 #endif
 
 /*  gcdALPHA_KILL_IN_SHADER
@@ -819,6 +858,39 @@
 
 #ifndef gcdUSE_WCLIP_PATCH
 #   define gcdUSE_WCLIP_PATCH                   1
+#endif
+
+#ifndef gcdHZ_L2_DISALBE
+#   define gcdHZ_L2_DISALBE                     1
+#endif
+
+#ifndef gcdBUGFIX15_DISABLE
+#   define gcdBUGFIX15_DISABLE                  1
+#endif
+
+#ifndef gcdDISABLE_HZ_FAST_CLEAR
+#   define gcdDISABLE_HZ_FAST_CLEAR             1
+#endif
+
+#ifndef gcdUSE_NPOT_PATCH
+#define gcdUSE_NPOT_PATCH                       1
+#endif
+
+
+#ifndef gcdSYNC
+#   define gcdSYNC                              1
+#endif
+
+/*
+    gcdDVFS
+
+        When non-zero, software will make use of dynamic voltage and
+        frequency feature.
+ */
+#ifndef gcdDVFS
+#   define gcdDVFS                               0
+#   define gcdDVFS_ANAYLSE_WINDOW                4
+#   define gcdDVFS_POLLING_TIME                  (gcdDVFS_ANAYLSE_WINDOW * 4)
 #endif
 
 #endif /* __gc_hal_options_h_ */
