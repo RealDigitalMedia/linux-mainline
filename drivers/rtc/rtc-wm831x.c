@@ -274,7 +274,7 @@ static int wm831x_rtc_setalarm(struct device *dev, struct rtc_wkalrm *alrm)
 	unsigned long time;
 
 	// -> [J.Chiang], Debug
-	printk("wm831x_rtc_setalarm is called...\n");
+	//printk("wm831x_rtc_setalarm is called...\n");
 	// <- End.
 	ret = rtc_tm_to_time(&alrm->time, &time);
 	if (ret < 0) {
@@ -465,6 +465,16 @@ static int wm831x_rtc_probe(struct platform_device *pdev)
 			alm_irq, ret);
 	}
 
+	// -> [Walker Chen], 2014/03/11 - RTC initial
+	ret = wm831x_reg_read( wm831x, WM831X_RTC_CONTROL);
+	if (!(ret & WM831X_RTC_VALID)) {		
+		// Set RTC to year/01/01
+		int const year= 2014;
+		unsigned long const time = ( 60*60*24*365*(year - 1970) )+ ( 60*60*24*((year - 1968)/4) );
+		wm831x_rtc_set_mmss( &pdev->dev , time );
+	}
+	// <- End.
+	
 	return 0;
 
 err:
