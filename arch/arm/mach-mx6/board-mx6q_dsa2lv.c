@@ -119,6 +119,8 @@
 #define DSA2LV_AMP_MUTE			IMX_GPIO_NR(4, 5)
 #define DSA2LV_AMP_SHUTDOWNn	IMX_GPIO_NR(7, 12)
 
+#define DSA2LV_IR_STATE			IMX_GPIO_NR(4, 7)
+
 #ifdef CONFIG_MX6_ENET_IRQ_TO_GPIO
 #define MX6_ENET_IRQ		IMX_GPIO_NR(1, 6)
 #define IOMUX_OBSRV_MUX1_OFFSET	0x3c
@@ -612,6 +614,12 @@ static void sabresd_suspend_enter(void)
 	/* suspend preparation */
 	/* Disable AUX 5V */
 	//gpio_set_value(SABRESD_AUX_5V_EN, 0);
+	
+	// IR state
+	gpio_request( DSA2LV_IR_STATE , "DSA2LV_IR_STATE" );
+	gpio_direction_output( DSA2LV_IR_STATE , 1 );
+	gpio_set_value( DSA2LV_IR_STATE , 0 );
+	gpio_free( DSA2LV_IR_STATE );
 }
 
 static void sabresd_suspend_exit(void)
@@ -619,6 +627,12 @@ static void sabresd_suspend_exit(void)
 	/* resume restore */
 	/* Enable AUX 5V */
 	//gpio_set_value(SABRESD_AUX_5V_EN, 1);
+	
+	// IR state
+	gpio_request( DSA2LV_IR_STATE , "DSA2LV_IR_STATE" );
+	gpio_direction_output( DSA2LV_IR_STATE , 1 );
+	gpio_set_value( DSA2LV_IR_STATE , 1 );
+	gpio_free( DSA2LV_IR_STATE );
 }
 static const struct pm_platform_data mx6q_sabresd_pm_data __initconst = {
 	.name = "imx_pm",
@@ -1049,6 +1063,12 @@ static inline void dsa2lv_init(void)
 	gpio_direction_output( DSA2LV_AMP_SHUTDOWNn , 1 );
 	gpio_set_value( DSA2LV_AMP_SHUTDOWNn , 1 );
 	gpio_free( DSA2LV_AMP_SHUTDOWNn );
+	
+	// IR state
+	gpio_request( DSA2LV_IR_STATE , "DSA2LV_IR_STATE" );
+	gpio_direction_output( DSA2LV_IR_STATE , 1 );
+	gpio_set_value( DSA2LV_IR_STATE , 1 );
+	gpio_free( DSA2LV_IR_STATE );
 
 }
 // <- End.
