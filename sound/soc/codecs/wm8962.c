@@ -38,11 +38,11 @@
 #include "wm8962.h"
 
 // -> [J.Chiang], 2014/01/03 - Removed the following supplies for DSA2L because these voltages are not belong to PMIC.
-#if	defined (CONFIG_DSA2L) || defined (CONFIG_DSA2LB)
+#if	defined (CONFIG_DSA2L) || defined (CONFIG_DSA2LB)|| defined (CONFIG_DSA2LV)
 #define WM8962_NUM_SUPPLIES 6
-#else	// CONFIG_DSA2L || CONFIG_DSA2LB
+#else	// CONFIG_DSA2L || CONFIG_DSA2LB || defined (CONFIG_DSA2LV)
 #define WM8962_NUM_SUPPLIES 8
-#endif // CONFIG_DSA2L || CONFIG_DSA2LB
+#endif // CONFIG_DSA2L || CONFIG_DSA2LB || defined (CONFIG_DSA2LV)
 static const char *wm8962_supply_names[WM8962_NUM_SUPPLIES] = {
 	"DCVDD",
 	"DBVDD",
@@ -51,10 +51,10 @@ static const char *wm8962_supply_names[WM8962_NUM_SUPPLIES] = {
 	"MICVDD",
 	"PLLVDD",
 // -> [J.Chiang], 2014/01/03 - Removed the following supplies for DSA2L because these voltages are not belong to PMIC.
-#if	! defined (CONFIG_DSA2L) || ! defined (CONFIG_DSA2LB)
+#if	! defined (CONFIG_DSA2L) || ! defined (CONFIG_DSA2LB)|| defined (CONFIG_DSA2LV)
 	"SPKVDD1",
 	"SPKVDD2",
-#endif	// ! (CONFIG_DSA2L || CONFIG_DSA2LB)
+#endif	// ! (CONFIG_DSA2L || CONFIG_DSA2LB)|| defined (CONFIG_DSA2LV)
 // <- End.
 };
 

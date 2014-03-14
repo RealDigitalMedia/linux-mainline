@@ -18,7 +18,11 @@ else
 	ifeq ($(CONFIG_DSA2LB), y)
 		obj-$(CONFIG_MACH_MX6Q_SABRESD) += board-mx6q_dsa2lb.o mx6q_dsa2lb_pmic_wm831x.o
 	else
-		obj-$(CONFIG_MACH_MX6Q_SABRESD) += board-mx6q_sabresd.o mx6q_sabresd_pmic_pfuze100.o
+		ifeq ($(CONFIG_DSA2LV), y)
+			obj-$(CONFIG_MACH_MX6Q_SABRESD) += board-mx6q_dsa2lv.o mx6q_dsa2lv_pmic_wm831x.o
+		else
+			obj-$(CONFIG_MACH_MX6Q_SABRESD) += board-mx6q_sabresd.o mx6q_sabresd_pmic_pfuze100.o
+		endif	
 	endif	
 endif
 obj-$(CONFIG_MACH_MX6Q_SABREAUTO) += board-mx6q_sabreauto.o mx6q_sabreauto_pmic_pfuze100.o

@@ -155,9 +155,9 @@ static battery_capacity dischargingTable[] = {
 u32 calibrate_battery_capability_percent(struct max8903_data *data)
 {
 // -> [J.Chiang], 2014/01/08 - Modified for DSA2L, the project does not have battery, reture 100% always.
-#if	(defined (CONFIG_DSA2L) || defined (CONFIG_DSA2LB))
+#if	(defined (CONFIG_DSA2L) || defined (CONFIG_DSA2LB)) || defined (CONFIG_DSA2LV)
 	return 90;
-#else	// CONFIG_DSA2L || CONFIG_DSA2LB
+#else	// CONFIG_DSA2L || CONFIG_DSA2LB || defined (CONFIG_DSA2LV)
     u8 i;
     pbattery_capacity pTable;
     u32 tableSize;
@@ -174,7 +174,7 @@ u32 calibrate_battery_capability_percent(struct max8903_data *data)
     }
 
     return 0;
-#endif	// CONFIG_DSA2L || CONFIG_DSA2LB
+#endif	// CONFIG_DSA2L || CONFIG_DSA2LB || defined (CONFIG_DSA2LV)
 // <- End.
 }
 
@@ -197,12 +197,12 @@ extern u32 max11801_read_adc(void);
 #endif
 static void max8903_charger_update_status(struct max8903_data *data)
 {
-#if	(defined (CONFIG_DSA2L) || defined (CONFIG_DSA2LB))
+#if	(defined (CONFIG_DSA2L) || defined (CONFIG_DSA2LB)) || defined (CONFIG_DSA2LV)
 	data->battery_status = POWER_SUPPLY_STATUS_CHARGING;
 	// DC-IN only
 	data->charger_online = 1;
 	data->usb_charger_online = 0;
-#else	// CONFIG_DSA2L || CONFIG_DSA2LB
+#else	// CONFIG_DSA2L || CONFIG_DSA2LB || defined (CONFIG_DSA2LV)
 	if (data->usb_in || data->ta_in) {
 		if (data->ta_in)
 		data->charger_online = 1;
@@ -238,7 +238,7 @@ static void max8903_charger_update_status(struct max8903_data *data)
 			}
 		}
 	}
-#endif	// CONFIG_DSA2L || CONFIG_DSA2LB
+#endif	// CONFIG_DSA2L || CONFIG_DSA2LB || defined (CONFIG_DSA2LV)
 	pr_debug("chg: %d\n", gpio_get_value(data->pdata->chg));
 	pr_debug("dc: %d\n", gpio_get_value(data->pdata->dok));
 	pr_debug("flt: %d\n", gpio_get_value(data->pdata->flt));
@@ -305,13 +305,13 @@ static void max8903_battery_update_status(struct max8903_data *data)
 	changed_flag = false;
 	mutex_lock(&data->work_lock);
 	if (!data->pdata->feature_flag) {
-#if	(defined (CONFIG_DSA2L) || defined (CONFIG_DSA2LB))
+#if	(defined (CONFIG_DSA2L) || defined (CONFIG_DSA2LB)) || defined (CONFIG_DSA2LV)
 		temp = 3600000;	// Assume 3.6V
-#else	// CONFIG_DSA2L || CONFIG_DSA2LB
+#else	// CONFIG_DSA2L || CONFIG_DSA2LB || defined (CONFIG_DSA2LV)
 #ifdef CONFIG_TOUCHSCREEN_MAX11801
 		temp = calibration_voltage(data);
 #endif
-#endif	// CONFIG_DSA2L || CONFIG_DSA2LB
+#endif	// CONFIG_DSA2L || CONFIG_DSA2LB || defined (CONFIG_DSA2LV)
 		if (temp_last == 0) {
 			data->voltage_uV = temp;
 			temp_last = temp;
@@ -355,10 +355,10 @@ static int max8903_battery_get_property(struct power_supply *bat,
 			struct max8903_data, bat);
 	switch (psp) {
 	case POWER_SUPPLY_PROP_STATUS:
-#if	(defined (CONFIG_DSA2L) || defined (CONFIG_DSA2LB))
+#if	(defined (CONFIG_DSA2L) || defined (CONFIG_DSA2LB)) || defined (CONFIG_DSA2LV)
 		// Always in charging
 		di->battery_status = POWER_SUPPLY_STATUS_CHARGING;
-#else	// CONFIG_DSA2L || CONFIG_DSA2LB
+#else	// CONFIG_DSA2L || CONFIG_DSA2LB || defined (CONFIG_DSA2LV)
 		val->intval = POWER_SUPPLY_STATUS_UNKNOWN;
 			if (gpio_get_value(di->pdata->chg) == 0) {
 				di->battery_status = POWER_SUPPLY_STATUS_CHARGING;
@@ -381,7 +381,7 @@ static int max8903_battery_get_property(struct power_supply *bat,
 						di->battery_status = POWER_SUPPLY_STATUS_FULL;
 					}
 			}
-#endif	//CONFIG_DSA2L || CONFIG_DSA2LB
+#endif	//CONFIG_DSA2L || CONFIG_DSA2LB || defined (CONFIG_DSA2LV)
 		val->intval = di->battery_status;
 		return 0;
 	default:
@@ -405,31 +405,31 @@ static int max8903_battery_get_property(struct power_supply *bat,
 		val->intval = 1;
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY:
-#if	(defined (CONFIG_DSA2L) || defined (CONFIG_DSA2LB))
+#if	(defined (CONFIG_DSA2L) || defined (CONFIG_DSA2LB)) || defined (CONFIG_DSA2LV)
 		val->intval = 90;
-#else	// CONFIG_DSA2L || DSA2LB
+#else	// CONFIG_DSA2L || DSA2LB || defined (CONFIG_DSA2LV)
 		val->intval = di->percent < 0 ? 0 :
 				(di->percent > 100 ? 100 : di->percent);
-#endif	// CONFIG_DSA2L || CONFIG_DSA2LB
+#endif	// CONFIG_DSA2L || CONFIG_DSA2LB || defined (CONFIG_DSA2LV)
 		break;
 	case POWER_SUPPLY_PROP_HEALTH:
 		val->intval = POWER_SUPPLY_HEALTH_GOOD;
-#if	((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)))
+#if	((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)) && (! defined (CONFIG_DSA2LV)))
 		if (di->fault)
 			val->intval = POWER_SUPPLY_HEALTH_UNSPEC_FAILURE;
-#endif	// ! (CONFIG_DSA2L && CONFIG_DSA2LB)
+#endif	//((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)) && (! defined (CONFIG_DSA2LV)))
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY_LEVEL:
-#if	defined (CONFIG_DSA2L) || defined (CONFIG_DSA2LB)
+#if	defined (CONFIG_DSA2L) || defined (CONFIG_DSA2LB) || defined (CONFIG_DSA2LV)
 		val->intval = POWER_SUPPLY_CAPACITY_LEVEL_NORMAL;
-#else	// CONFIG_DSA2L || CONFIG_DSA2LB
+#else	// CONFIG_DSA2L || CONFIG_DSA2LB || defined (CONFIG_DSA2LV)
 		if (di->battery_status == POWER_SUPPLY_STATUS_FULL)
 			val->intval = POWER_SUPPLY_CAPACITY_LEVEL_FULL;
 		else if (di->percent <= 15)
 			val->intval = POWER_SUPPLY_CAPACITY_LEVEL_LOW;
 		else
 			val->intval = POWER_SUPPLY_CAPACITY_LEVEL_NORMAL;
-#endif	// CONFIG_DSA2L || CONFIG_DSA2LB
+#endif	// CONFIG_DSA2L || CONFIG_DSA2LB || defined (CONFIG_DSA2LV)
 		break;
 	default:
 		return -EINVAL;
@@ -446,14 +446,14 @@ static int max8903_get_property(struct power_supply *psy,
 
 	switch (psp) {
 	case POWER_SUPPLY_PROP_ONLINE:
-#if	(defined (CONFIG_DSA2L) || defined (CONFIG_DSA2LB))
+#if	(defined (CONFIG_DSA2L) || defined (CONFIG_DSA2LB)) || defined (CONFIG_DSA2LV)
 		// Always on-line, or system will enter suspend.
 		val->intval = 1;		
-#else	// CONFIG_DSA2L || CONFIG_DSA2LB
+#else	// CONFIG_DSA2L || CONFIG_DSA2LB || defined (CONFIG_DSA2LV)
 		val->intval = 0;
 		if (data->ta_in)
 			val->intval = 1;
-#endif	// CONFIG_DSA2L || CONFIG_DSA2LB
+#endif	// CONFIG_DSA2L || CONFIG_DSA2LB || defined (CONFIG_DSA2LV)
 		data->charger_online = val->intval;
 		break;
 	default:
@@ -471,10 +471,10 @@ static int max8903_get_usb_property(struct power_supply *usb,
 	switch (psp) {
 	case POWER_SUPPLY_PROP_ONLINE:
 		val->intval = 0;
-#if	((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)))
+#if	((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)) && (! defined (CONFIG_DSA2LV)) ) 
 		if (data->usb_in)
 			val->intval = 1;
-#endif	// !(CONFIG_DSA2L && CONFIG_DSA2LB)
+#endif	// ((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)) && (! defined (CONFIG_DSA2LV)) )
 		data->usb_charger_online = val->intval;
 		break;
 	default:
@@ -688,7 +688,7 @@ static __devinit int max8903_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, data);
 	data->usb_in = 0;
 	data->ta_in = 0;
-#if	((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)))
+#if	((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)) && (! defined (CONFIG_DSA2LV)) )
 	if (pdata->dc_valid == false && pdata->usb_valid == false) {
 		dev_err(dev, "No valid power sources.\n");
 		printk(KERN_INFO "No valid power sources.\n");
@@ -774,7 +774,7 @@ static __devinit int max8903_probe(struct platform_device *pdev)
 			goto err;
 		}
 	}
-#endif	// !CONFIG_DSA2L && !CONFIG_DSA2LB
+#endif	// ((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)) && (! defined (CONFIG_DSA2LV)) )
 	mutex_init(&data->work_lock);
 	//-> [J.Chiang], debug
 	printk("sabresd_battery: register max8903-ac......\n");
@@ -792,7 +792,7 @@ static __devinit int max8903_probe(struct platform_device *pdev)
 		dev_err(dev, "failed: power supply register.\n");
 		goto err_psy;
 	}
-#if	((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)))
+#if	((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)) && (! defined (CONFIG_DSA2LV)) )
 	data->usb.name = "max8903-usb";
 	data->usb.type = POWER_SUPPLY_TYPE_USB;
 	data->usb.get_property = max8903_get_usb_property;
@@ -803,7 +803,7 @@ static __devinit int max8903_probe(struct platform_device *pdev)
 		dev_err(dev, "failed: power supply register.\n");
 		goto err_psy;
 	}
-#endif	// !CONFIG_DSA2L && !CONFIG_DSA2LB
+#endif	// ((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)) && (! defined (CONFIG_DSA2LV)) )
 	//-> [J.Chiang], debug
 	printk("sabresd_battery: register max8903-charger......\n");
 	// <- End.
@@ -820,7 +820,7 @@ static __devinit int max8903_probe(struct platform_device *pdev)
 	}
 	INIT_DELAYED_WORK(&data->work, max8903_battery_work);
 	schedule_delayed_work(&data->work, data->interval);
-#if	((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)))
+#if	((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)) && (! defined (CONFIG_DSA2LV)) )
 	if (pdata->dc_valid) {
 		ret = request_threaded_irq(gpio_to_irq(pdata->dok),
 				NULL, max8903_dcin,
@@ -868,18 +868,18 @@ static __devinit int max8903_probe(struct platform_device *pdev)
 			goto err_chg_irq;
 		}
 	}
-#endif	// !CONFIG_DSA2L && !CONFIG_DSA2LB
+#endif	// ((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)) && (! defined (CONFIG_DSA2LV)) )
 	ret = device_create_file(&pdev->dev, &max8903_discharger_dev_attr);
 	if (ret)
 		dev_err(&pdev->dev, "create device file failed!\n");
 	ret = device_create_file(&pdev->dev, &max8903_charger_dev_attr);
 	if (ret)
 		dev_err(&pdev->dev, "create device file failed!\n");
-#if	((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)))
+#if	((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)) && (! defined (CONFIG_DSA2LV)) )
 	ret = device_create_file(&pdev->dev, &max8903_usb_charger_dev_attr);
 	if (ret)
 		dev_err(&pdev->dev, "create device file failed!\n");
-#endif	// !CONFIG_DSA2L && !CONFIG_DSA2LB
+#endif	// ((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)) && (! defined (CONFIG_DSA2LV)) )
 	if (cpu_type_flag == 1) {
 			offset_discharger = 1694;
 			offset_charger = 1900;
@@ -950,7 +950,7 @@ static __devexit int max8903_remove(struct platform_device *pdev)
 static int max8903_suspend(struct platform_device *pdev,
 				  pm_message_t state)
 {
-#if	((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)))
+#if	((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)) && (! defined (CONFIG_DSA2LV)) )
 	struct max8903_data *data = platform_get_drvdata(pdev);
 	int irq;
 	if (data) {
@@ -967,13 +967,13 @@ static int max8903_suspend(struct platform_device *pdev,
 			cancel_delayed_work(&data->work);
 		}
 	}
-#endif	// !CONFIG_DSA2L && !CONFIG_DSA2LB
+#endif	// ((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)) && (! defined (CONFIG_DSA2LV)) )
 	return 0;
 }
 
 static int max8903_resume(struct platform_device *pdev)
 {
-#if	((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)))
+#if	((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)) && (! defined (CONFIG_DSA2LV)) )
 	struct max8903_data *data = platform_get_drvdata(pdev);
 	bool ta_in;
 	bool usb_in;
@@ -1008,7 +1008,7 @@ static int max8903_resume(struct platform_device *pdev)
 			schedule_delayed_work(&data->work, BATTERY_UPDATE_INTERVAL);
 		}
 	}
-#endif	// !CONFIG_DSA2L && !CONFIG_DSA2LB
+#endif	// ((! defined (CONFIG_DSA2L)) && (! defined (CONFIG_DSA2LB)) && (! defined (CONFIG_DSA2LV)) )
 	return 0;
 
 }

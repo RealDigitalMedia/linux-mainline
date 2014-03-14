@@ -1377,11 +1377,17 @@ config DSA2L
 	help
 	  DSA2L is a project name of Shuttle Inc.
 config DSA2LB
-	bool "Shuttle dedicated project: DSA2L"
+	bool "Shuttle dedicated project: DSA2LB"
 	depends on ARCH_MX6Q
 	default n
 	help
 	  DSA2LB is a project name of Shuttle Inc.
+config DSA2LV
+	bool "Shuttle dedicated project: DSA2LV"
+	depends on ARCH_MX6Q
+	default n
+	help
+	  DSA2LV is a project name of Shuttle Inc.
 
 config SMP_ON_UP
 	bool "Allow booting SMP kernel on uniprocessor systems (EXPERIMENTAL)"
