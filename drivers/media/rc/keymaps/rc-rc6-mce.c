@@ -16,16 +16,29 @@
 
 static struct rc_map_table rc6_mce[] = {
 
-	{ 0x800f0400, KEY_NUMERIC_0 },
-	{ 0x800f0401, KEY_NUMERIC_1 },
-	{ 0x800f0402, KEY_NUMERIC_2 },
-	{ 0x800f0403, KEY_NUMERIC_3 },
-	{ 0x800f0404, KEY_NUMERIC_4 },
-	{ 0x800f0405, KEY_NUMERIC_5 },
-	{ 0x800f0406, KEY_NUMERIC_6 },
-	{ 0x800f0407, KEY_NUMERIC_7 },
-	{ 0x800f0408, KEY_NUMERIC_8 },
-	{ 0x800f0409, KEY_NUMERIC_9 },
+	// -> [Walker Chen], key maps test
+	//{ 0x800f0400, KEY_NUMERIC_0 },
+	//{ 0x800f0401, KEY_NUMERIC_1 },
+	//{ 0x800f0402, KEY_NUMERIC_2 },
+	//{ 0x800f0403, KEY_NUMERIC_3 },
+	//{ 0x800f0404, KEY_NUMERIC_4 },
+	//{ 0x800f0405, KEY_NUMERIC_5 },
+	//{ 0x800f0406, KEY_NUMERIC_6 },
+	//{ 0x800f0407, KEY_NUMERIC_7 },
+	//{ 0x800f0408, KEY_NUMERIC_8 },
+	//{ 0x800f0409, KEY_NUMERIC_9 },
+	
+	{ 0x800f0400, KEY_0 },
+	{ 0x800f0401, KEY_1 },
+	{ 0x800f0402, KEY_2 },
+	{ 0x800f0403, KEY_3 },
+	{ 0x800f0404, KEY_4 },
+	{ 0x800f0405, KEY_5 },
+	{ 0x800f0406, KEY_6 },
+	{ 0x800f0407, KEY_7 },
+	{ 0x800f0408, KEY_8 },
+	{ 0x800f0409, KEY_9 },	
+	// <- End.
 
 	{ 0x800f040a, KEY_DELETE },
 	{ 0x800f040b, KEY_ENTER },
@@ -57,7 +70,10 @@ static struct rc_map_table rc6_mce[] = {
 	{ 0x800f0421, KEY_RIGHT },
 
 	{ 0x800f0422, KEY_OK },
-	{ 0x800f0423, KEY_EXIT },
+	// -> [Walker Chen], 2014/03/14 - key maps test
+	//{ 0x800f0423, KEY_EXIT },
+	{ 0x800f0423, KEY_ESC },	
+	// <- End.
 	{ 0x800f0424, KEY_DVD },
 	{ 0x800f0425, KEY_TUNER },		/* LiveTV */
 	{ 0x800f0426, KEY_EPG },		/* Guide */
