@@ -123,6 +123,11 @@ static char manufacturer_string[256];
 static char product_string[256];
 static char serial_string[256];
 
+// -> [Walker Chen], 2014/03/17 - USB OTG serial = MacAddress 
+char* OTG_SERIAL = serial_string;
+EXPORT_SYMBOL(OTG_SERIAL);
+// <- End.
+
 /* String Table */
 static struct usb_string strings_dev[] = {
 	[STRING_MANUFACTURER_IDX].s = manufacturer_string,
