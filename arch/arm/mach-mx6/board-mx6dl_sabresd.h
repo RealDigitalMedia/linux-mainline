@@ -411,8 +411,6 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	/* UART1 for debug */
 	MX6DL_PAD_SD3_DAT6__UART1_RXD,
 	MX6DL_PAD_SD3_DAT7__UART1_TXD,
-	//MX6DL_PAD_CSI0_DAT10__UART1_TXD,	// TP3
-	//MX6DL_PAD_CSI0_DAT11__UART1_RXD,	// TP2
 	
 	/* UART2 for debug */
 	MX6DL_PAD_SD3_DAT4__UART2_RXD,
@@ -487,13 +485,16 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	MX6DL_PAD_GPIO_9__WDOG1_WDOG_B,	/* PMIC RESETn */
 	MX6DL_PAD_GPIO_5__GPIO_1_5,		/* PMIC_GPIO_RSTn */
 
+	/* eMMC reset */
+	MX6DL_PAD_ENET_TXD1__GPIO_1_29,	/* eMMC RESET */
+	
 	/* LEDs */
 	MX6DL_PAD_SD3_CLK__GPIO_7_3,	/* RED */
-	MX6DL_PAD_SD3_CMD__GPIO_7_2,	/* GREEN */
+	MX6DL_PAD_SD3_CMD__GPIO_7_2,	/* BLUE */
 	
 	/* Backlight */
-	MX6DL_PAD_SD1_DAT3__PWM1_PWMO,	/* pwm */
-	MX6DL_PAD_GPIO_7__GPIO_1_7,		/* backlight PWR enable */
+	MX6DL_PAD_GPIO_1__PWM2_PWMO,	/* pwm */
+	MX6DL_PAD_NANDF_CS2__GPIO_6_15,	/* backlight PWR enable */
 	
 	/* Wi-Fi */
 	MX6DL_PAD_SD3_DAT0__GPIO_7_4,	/* Wi-Fi disable */
@@ -502,12 +503,9 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	MX6DL_PAD_SD3_DAT1__GPIO_7_5,	/* USB OTG power-detect */
 	
 	/* Board ID[2:0] */
-	MX6DL_PAD_SD1_CMD__GPIO_1_18,	/* id[0] */
-	MX6DL_PAD_SD1_CLK__GPIO_1_20,	/* id[1] */
-	MX6DL_PAD_SD1_DAT0__GPIO_1_16,	/* id[2] */
-	
-	/* RTC */
-	MX6DL_PAD_ENET_TXD0__GPIO_1_30, /* INTn */
+	MX6DL_PAD_SD1_DAT1__GPIO_1_17,	/* id[0] */
+	MX6DL_PAD_SD1_DAT2__GPIO_1_19,	/* id[1] */
+	MX6DL_PAD_SD1_DAT3__GPIO_1_21,	/* id[2] */
 	
 	/* Buttons */
 	MX6DL_PAD_GPIO_18__GPIO_7_13,	/* Power ON BTN */
@@ -517,14 +515,14 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	MX6DL_PAD_ENET_TX_EN__GPIO_1_28,
 	
 	/* LVDS_setting */
-	MX6DL_PAD_GPIO_1__GPIO_1_1,	/* LVDS_RESOLUTION0 */
-	MX6DL_PAD_GPIO_2__GPIO_1_2,	/* LVDS_RESOLUTION1 */
-	MX6DL_PAD_GPIO_4__GPIO_1_4,	/* LVDS_RESOLUTION2 */
-	MX6DL_PAD_GPIO_8__GPIO_1_8,	/* LVDS_MODE */
+	MX6DL_PAD_GPIO_2__GPIO_1_2,	/* LVDS_RESOLUTION0 */
+	MX6DL_PAD_GPIO_4__GPIO_1_4,	/* LVDS_RESOLUTION1 */
+	MX6DL_PAD_GPIO_7__GPIO_1_7,	/* LVDS_RESOLUTION2 */
+	MX6DL_PAD_GPIO_8__GPIO_1_8,	/* LVDS_RESOLUTION3 */
 	
-	/* audio amp */
-	MX6DL_PAD_GPIO_19__GPIO_4_5,	/* amp_mute */
-	MX6DL_PAD_GPIO_17__GPIO_7_12,	/* amp_shutdown */
+	MX6DL_PAD_GPIO_17__GPIO_7_12,	/* LVDS_CH_SEL */
+	
+	//MX6DL_PAD_GPIO_19__GPIO_4_5,	/* LVDS PWR EN*/
 	
 	/* IR */
 	MX6DL_PAD_KEY_ROW0__GPIO_4_7,	/* IR state select */

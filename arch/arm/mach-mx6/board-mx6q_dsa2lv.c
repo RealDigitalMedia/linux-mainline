@@ -87,12 +87,12 @@
 
 #define SABRESD_MICROPHONE_DET	IMX_GPIO_NR(1, 9)
 #define DSA2LV_PMIC_GPIO_RST	IMX_GPIO_NR(1, 5)
-#define DSA2LV_BOARD_ID0		IMX_GPIO_NR(1, 18)
-#define DSA2LV_BOARD_ID1		IMX_GPIO_NR(1, 20)
-#define DSA2LV_BOARD_ID2		IMX_GPIO_NR(1, 16)
+#define DSA2LV_BOARD_ID0		IMX_GPIO_NR(1, 17)
+#define DSA2LV_BOARD_ID1		IMX_GPIO_NR(1, 19)
+#define DSA2LV_BOARD_ID2		IMX_GPIO_NR(1, 21)
 #define SABRESD_RGMII_RST		IMX_GPIO_NR(1, 25)
 #define SABRESD_RGMII_INT		IMX_GPIO_NR(1, 26)
-#define DSA2LV_RTC_INT			IMX_GPIO_NR(1, 30)
+#define DSA2LV_EMMC_RST			IMX_GPIO_NR(1, 29)
 
 #define SABRESD_SD2_CD			IMX_GPIO_NR(2, 2)
 #define SABRESD_SD2_WP			IMX_GPIO_NR(2, 3)
@@ -109,15 +109,14 @@
 #define DSA2LV_USB_OTG_PWR_IN	IMX_GPIO_NR(7, 5)
 #define DSA2LV_BTN_POWER		IMX_GPIO_NR(7, 13)
 #define DSA2LV_WOL_IRQ			IMX_GPIO_NR(1, 28)
-#define DSA2LV_BACKLIGHT_EN		IMX_GPIO_NR(1, 7)
+#define DSA2LV_BACKLIGHT_EN		IMX_GPIO_NR(6, 15)
 
-#define DSA2LV_LVDS_RES_0		IMX_GPIO_NR(1, 1)
-#define DSA2LV_LVDS_RES_1		IMX_GPIO_NR(1, 2)
-#define DSA2LV_LVDS_RES_2		IMX_GPIO_NR(1, 4)
-#define DSA2LV_LVDS_MODE		IMX_GPIO_NR(1, 8)
-
-#define DSA2LV_AMP_MUTE			IMX_GPIO_NR(4, 5)
-#define DSA2LV_AMP_SHUTDOWNn	IMX_GPIO_NR(7, 12)
+#define DSA2LV_LVDS_RES_0		IMX_GPIO_NR(1, 2)
+#define DSA2LV_LVDS_RES_1		IMX_GPIO_NR(1, 4)
+#define DSA2LV_LVDS_RES_2		IMX_GPIO_NR(1, 7)
+#define DSA2LV_LVDS_RES_3		IMX_GPIO_NR(1, 8)
+#define DSA2LV_LVDS_CH_SEL		IMX_GPIO_NR(7, 12)
+//#define DSA2LV_LVDS_PWR_EN		IMX_GPIO_NR(4, 5)
 
 #define DSA2LV_IR_STATE			IMX_GPIO_NR(4, 7)
 
@@ -981,6 +980,12 @@ static inline void dsa2lv_init(void)
 	gpio_direction_input( DSA2LV_PMIC_INT );
 	gpio_free( DSA2LV_PMIC_INT );
 
+	// EMMC
+	gpio_request( DSA2LV_EMMC_RST , "EMMC_RST" );
+	gpio_direction_output( DSA2LV_EMMC_RST , 1 );
+	gpio_set_value( DSA2LV_EMMC_RST , 1 );
+	gpio_free( DSA2LV_EMMC_RST);
+	
 	// LEDs
 	gpio_request( DSA2LV_LED_R , "LED_R" );
 	gpio_direction_output( DSA2LV_LED_R , 1 );
@@ -1016,11 +1021,6 @@ static inline void dsa2lv_init(void)
 	gpio_direction_input( DSA2LV_BOARD_ID2 );
 	gpio_free( DSA2LV_BOARD_ID2 );
 
-	// RTC
-	gpio_request( DSA2LV_RTC_INT , "RTC_INT" );
-	gpio_direction_input( DSA2LV_RTC_INT );
-	gpio_free( DSA2LV_RTC_INT );
-
 	// Btns
 	gpio_request( DSA2LV_BTN_RESET , "BTN_RESET" );
 	gpio_direction_input( DSA2LV_BTN_RESET );
@@ -1049,20 +1049,13 @@ static inline void dsa2lv_init(void)
 	gpio_direction_input( DSA2LV_LVDS_RES_2 );
 	gpio_free( DSA2LV_LVDS_RES_2 );
 
-	gpio_request( DSA2LV_LVDS_MODE , "DSA2LV_LVDS_MODE" );
-	gpio_direction_input( DSA2LV_LVDS_MODE );
-	gpio_free( DSA2LV_LVDS_MODE );
+	gpio_request( DSA2LV_LVDS_RES_3 , "DSA2LV_LVDS_RES_3" );
+	gpio_direction_input( DSA2LV_LVDS_RES_3 );
+	gpio_free( DSA2LV_LVDS_RES_3 );
 
-	// audio amp
-	gpio_request( DSA2LV_AMP_MUTE , "DSA2LV_AMP_MUTE" );
-	gpio_direction_output( DSA2LV_AMP_MUTE , 1 );
-	gpio_set_value( DSA2LV_AMP_MUTE , 0 );
-	gpio_free( DSA2LV_AMP_MUTE );
-
-	gpio_request( DSA2LV_AMP_SHUTDOWNn , "DSA2LV_AMP_SHUTDOWNn" );
-	gpio_direction_output( DSA2LV_AMP_SHUTDOWNn , 1 );
-	gpio_set_value( DSA2LV_AMP_SHUTDOWNn , 1 );
-	gpio_free( DSA2LV_AMP_SHUTDOWNn );
+	gpio_request( DSA2LV_LVDS_CH_SEL , "DSA2LV_LVDS_CH_SEL" );
+	gpio_direction_input( DSA2LV_LVDS_CH_SEL );
+	gpio_free( DSA2LV_LVDS_CH_SEL );
 	
 	// IR state
 	gpio_request( DSA2LV_IR_STATE , "DSA2LV_IR_STATE" );
@@ -1193,7 +1186,7 @@ static void __init mx6_sabresd_board_init(void)
 	/* Move sd4 to first because sd4 connect to emmc.
 	   Mfgtools want emmc is mmcblk0 and other sd card is mmcblk1.
 	*/
-	//imx6q_add_sdhci_usdhc_imx(3, &mx6q_sabresd_sd4_data);
+	imx6q_add_sdhci_usdhc_imx(3, &mx6q_sabresd_sd4_data);
 	//imx6q_add_sdhci_usdhc_imx(2, &mx6q_sabresd_sd3_data);
 	imx6q_add_sdhci_usdhc_imx(1, &mx6q_sabresd_sd2_data);
 	imx_add_viv_gpu(&imx6_gpu_data, &imx6q_gpu_pdata);
