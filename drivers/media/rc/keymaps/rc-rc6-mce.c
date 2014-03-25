@@ -16,6 +16,26 @@
 
 static struct rc_map_table rc6_mce[] = {
 
+	// -> [Walker Chen], 2014/03/20 - added NETGEAR RC5 key map
+	{ 0x180C, KEY_POWER },
+	{ 0x1801, KEY_HOMEPAGE },	// HOME
+	{ 0x1815, KEY_LEFT },
+	{ 0x180D, KEY_RIGHT },
+	{ 0x1810, KEY_UP },
+	{ 0x1808, KEY_DOWN },
+	{ 0x1820, KEY_ENTER },
+	{ 0x1818, KEY_ESC },		// BACK
+	{ 0x1805, KEY_REFRESH },	// APP_SWITCH
+	{ 0x1837, KEY_STOP },
+	{ 0x1813, KEY_VOLUMEUP },
+	{ 0x1803, KEY_VOLUMEDOWN },
+	{ 0x1832, KEY_MUTE },
+	{ 0x181A, KEY_PAGEUP },
+	{ 0x1811, KEY_PAGEDOWN },
+	{ 0x1821, KEY_SEARCH  },	// Search
+	{ 0x1809, KEY_WWW },
+	// <- End.
+
 	// -> [Walker Chen], key maps test
 	//{ 0x800f0400, KEY_NUMERIC_0 },
 	//{ 0x800f0401, KEY_NUMERIC_1 },
