@@ -36,6 +36,36 @@ static struct rc_map_table rc6_mce[] = {
 	{ 0x1809, KEY_WWW },
 	// <- End.
 
+	// -> [J.Chiang], 2014/04/11 - added Philips RC6 key map
+	{ 0x80722600, KEY_0 },
+	{ 0x80722601, KEY_1 },
+	{ 0x80722602, KEY_2 },
+	{ 0x80722603, KEY_3 },
+	{ 0x80722604, KEY_4 },
+	{ 0x80722605, KEY_5 },
+	{ 0x80722606, KEY_6 },
+	{ 0x80722607, KEY_7 },
+	{ 0x80722608, KEY_8 },
+	{ 0x80722609, KEY_9 },	
+	{ 0x8072260C, KEY_POWER },
+	{ 0x8072264B, KEY_HOMEPAGE },	// HOME
+	{ 0x807226A1, KEY_REFRESH },	// APP_SWITCH
+	{ 0x807226CC, KEY_ESC },	// BACK
+	{ 0x8072260F, KEY_WWW },
+	{ 0x8072265A, KEY_LEFT },
+	{ 0x8072265B, KEY_RIGHT },
+	{ 0x80722658, KEY_UP },
+	{ 0x80722659, KEY_DOWN },
+	{ 0x8072265C, KEY_ENTER },
+	{ 0x807226A9, KEY_SEARCH },	// Search
+	{ 0x80722631, KEY_STOP },
+	{ 0x80722610, KEY_VOLUMEUP },
+	{ 0x80722611, KEY_VOLUMEDOWN },
+	{ 0x8072260D, KEY_MUTE },
+	{ 0x8072261E, KEY_PAGEUP },
+	{ 0x8072261F, KEY_PAGEDOWN },
+	// <- End.
+
 	// -> [Walker Chen], key maps test
 	//{ 0x800f0400, KEY_NUMERIC_0 },
 	//{ 0x800f0401, KEY_NUMERIC_1 },

@@ -49,7 +49,11 @@
 #define DRIVER_AUTHOR	"Jarod Wilson <jarod@redhat.com>"
 #define DRIVER_DESC	"Windows Media Center Ed. eHome Infrared Transceiver " \
 			"device driver"
+#ifdef CONFIG_DSA2LB	// [J.Chiang], Added for debugging.
+#define DRIVER_NAME	"mceusb-dsa2lb"
+#else
 #define DRIVER_NAME	"mceusb"
+#endif
 
 #define USB_BUFLEN		32 /* USB reception buffer length */
 #define USB_CTRL_MSG_SZ		2  /* Size of usb ctrl msg on gen1 hw */
@@ -155,11 +159,15 @@
 #define MCE_PACKET_LENGTH_MASK	0x1f /* Packet length mask */
 
 /* module parameters */
+//#ifdef CONFIG_DSA2LB	// [J.Chiang], Added for debugging.
+//static int debug = 1;
+//#else
 #ifdef CONFIG_USB_DEBUG
 static int debug = 1;
 #else
 static int debug;
 #endif
+//#endif			// End.
 
 #define mce_dbg(dev, fmt, ...)					\
 	do {							\
