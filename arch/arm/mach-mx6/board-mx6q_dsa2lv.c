@@ -1222,7 +1222,11 @@ static void __init mx6_sabresd_board_init(void)
 	imx6q_add_mxc_pwm(1);
 	imx6q_add_mxc_pwm(2);
 	imx6q_add_mxc_pwm(3);
-	imx6q_add_mxc_pwm_backlight(0, &mx6_sabresd_pwm_backlight_data);
+	// -> [Walker Chen], 2014/04/11 - change to pwm2
+	//imx6q_add_mxc_pwm_backlight(0, &mx6_sabresd_pwm_backlight_data);
+	imx6q_add_mxc_pwm_backlight(2, &mx6_sabresd_pwm_backlight_data);
+	// <- Ed.
+
 
 	imx6q_add_otp();
 	imx6q_add_viim();
