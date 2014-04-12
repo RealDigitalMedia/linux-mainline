@@ -811,7 +811,10 @@ static void __init imx6q_add_device_buttons(void) {}
 #endif
 
 static struct platform_pwm_backlight_data mx6_sabresd_pwm_backlight_data = {
-	.pwm_id = 0,
+	// -> [Walker Chen], 2014/04/12 - change to pwm1
+	//.pwm_id = 0,
+	.pwm_id = 1,
+	// <- End.
 	.max_brightness = 248,
 	.dft_brightness = 128,
 	.pwm_period_ns = 50000,
@@ -1222,9 +1225,8 @@ static void __init mx6_sabresd_board_init(void)
 	imx6q_add_mxc_pwm(1);
 	imx6q_add_mxc_pwm(2);
 	imx6q_add_mxc_pwm(3);
-	// -> [Walker Chen], 2014/04/11 - change to pwm2
-	//imx6q_add_mxc_pwm_backlight(0, &mx6_sabresd_pwm_backlight_data);
-	imx6q_add_mxc_pwm_backlight(2, &mx6_sabresd_pwm_backlight_data);
+	// -> [Walker Chen], 2014/04/11 - change to pwm1, but keep id 0
+	imx6q_add_mxc_pwm_backlight(0, &mx6_sabresd_pwm_backlight_data);
 	// <- Ed.
 
 
