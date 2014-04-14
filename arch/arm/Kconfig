@@ -1370,6 +1370,11 @@ config SMP
 
 	  If you don't know what to do here, say N.
 
+config UPDATER
+	bool "updater for MFG tool"
+	depends on ARCH_MX6Q
+	default n
+
 config DSA2L
 	bool "Shuttle dedicated project: DSA2L"
 	depends on ARCH_MX6Q

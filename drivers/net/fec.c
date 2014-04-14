@@ -1111,6 +1111,7 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	*/
 	// <- End.
 	
+	#ifndef CONFIG_UPDATER
 	// -> [Walker Chen], 2014/03/17 - USB OTG serial = MacAddress 
 	extern char* OTG_SERIAL;
 	sprintf( OTG_SERIAL , "%02X%02X%02X%02X%02X%02X",
@@ -1122,7 +1123,7 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 		ndev->dev_addr[5]	);
 	//printk( "OTG_SERIAL:%s\n" , OTG_SERIAL );
 	// <- End.
-	
+	#endif
 	
 	if (IS_ERR(phy_dev)) {
 		printk(KERN_ERR "%s: could not attach to PHY\n", ndev->name);
