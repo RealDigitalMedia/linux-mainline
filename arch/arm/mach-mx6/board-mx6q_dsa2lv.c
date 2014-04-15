@@ -116,7 +116,9 @@
 #define DSA2LV_LVDS_RES_2		IMX_GPIO_NR(1, 7)
 #define DSA2LV_LVDS_RES_3		IMX_GPIO_NR(1, 8)
 #define DSA2LV_LVDS_CH_SEL		IMX_GPIO_NR(7, 12)
-//#define DSA2LV_LVDS_PWR_EN		IMX_GPIO_NR(4, 5)
+#define DSA2LV_LVDS_PWR_EN		IMX_GPIO_NR(4, 5)
+#define DSA2LV_LVDS_PWR_EN		IMX_GPIO_NR(4, 5)
+#define DSA2LV_LVDS_HDMI_SEL		IMX_GPIO_NR(4, 6)
 
 #define DSA2LV_IR_STATE			IMX_GPIO_NR(4, 7)
 
@@ -1033,12 +1035,6 @@ static inline void dsa2lv_init(void)
 	gpio_direction_input( DSA2LV_BTN_POWER );
 	gpio_free( DSA2LV_BTN_POWER );
 	
-	// Backlight
-	gpio_request( DSA2LV_BACKLIGHT_EN , "DSA2LV_BACKLIGHT_EN" );
-	gpio_direction_output( DSA2LV_BACKLIGHT_EN , 1 );
-	gpio_set_value( DSA2LV_BACKLIGHT_EN , 1 );
-	gpio_free( DSA2LV_BACKLIGHT_EN );	
-	
 	// LVDS mode
 	gpio_request( DSA2LV_LVDS_RES_0 , "DSA2LV_LVDS_RES_0" );
 	gpio_direction_input( DSA2LV_LVDS_RES_0 );
@@ -1065,6 +1061,32 @@ static inline void dsa2lv_init(void)
 	gpio_direction_output( DSA2LV_IR_STATE , 1 );
 	gpio_set_value( DSA2LV_IR_STATE , 1 );
 	gpio_free( DSA2LV_IR_STATE );
+
+	// LVDS HDMI selsec
+	gpio_request( DSA2LV_LVDS_HDMI_SEL , "DSA2LV_LVDS_HDMI_SEL" );
+	gpio_direction_input( DSA2LV_LVDS_HDMI_SEL  );
+	gpio_free( DSA2LV_LVDS_HDMI_SEL );
+
+
+	// Backlight
+	gpio_request( DSA2LV_BACKLIGHT_EN , "DSA2LV_BACKLIGHT_EN" );
+	gpio_direction_output( DSA2LV_BACKLIGHT_EN , 1 );
+	//gpio_set_value( DSA2LV_BACKLIGHT_EN , 1 );
+	gpio_free( DSA2LV_BACKLIGHT_EN );
+
+	// LVDS PWR
+	gpio_request( DSA2LV_LVDS_PWR_EN , "DSA2LV_LVDS_PWR_EN" );
+	gpio_direction_output( DSA2LV_LVDS_PWR_EN , 1 );
+	//gpio_set_value( DSA2LV_LVDS_PWR_EN , 1 );
+	gpio_free( DSA2LV_LVDS_PWR_EN );
+
+	if( gpio_get_value(DSA2LV_LVDS_HDMI_SEL) ){     //0:HDMI, 1:LVDS
+		gpio_set_value( DSA2LV_BACKLIGHT_EN , 1 );
+		gpio_set_value( DSA2LV_LVDS_PWR_EN , 1 );
+	}else{
+		gpio_set_value( DSA2LV_BACKLIGHT_EN , 0 );
+		gpio_set_value( DSA2LV_LVDS_PWR_EN , 0 );
+	}
 
 }
 // <- End.

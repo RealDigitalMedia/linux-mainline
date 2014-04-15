@@ -522,10 +522,12 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	
 	MX6DL_PAD_GPIO_17__GPIO_7_12,	/* LVDS_CH_SEL */
 	
-	//MX6DL_PAD_GPIO_19__GPIO_4_5,	/* LVDS PWR EN*/
+	MX6DL_PAD_GPIO_19__GPIO_4_5,	/* LVDS PWR EN*/
 	
 	/* IR */
 	MX6DL_PAD_KEY_ROW0__GPIO_4_7,	/* IR state select */
+
+	MX6DL_PAD_KEY_COL0__GPIO_4_6,   /* HDMI/LVDS select*/
 };
 #endif	// CONFIG_DSA2LV
 
